@@ -9,6 +9,7 @@ const MainLayout = ({ children }) => {
           <ul>
             <li><a href="/">Home</a></li>
             <li><a href="/about">About</a></li>
+            <li><a href="/Login">Sing in</a></li>
           </ul>
         </nav>
       </header>
