@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Modal, Button, notification, Tag, Image } from 'antd';
 import { BarcodeOutlined, QrcodeOutlined } from '@ant-design/icons';
-import { QRCodeCanvas } from 'qrcode.react'; // Asegúrate de usar el nombre correcto
+import { QRCodeCanvas } from 'qrcode.react';
 import { API_URL_PRODUCT_BATCH, API_URL_BATCH } from '../../services/ApisConfig';
 import Navbar from '../../components/Navbar';
 
@@ -9,12 +9,11 @@ const ProductBatchPage = () => {
     const [batches, setBatches] = useState([]);
     const [selectedProducts, setSelectedProducts] = useState([]);
     const [productsModalVisible, setProductsModalVisible] = useState(false);
-    const [codeModalVisible, setCodeModalVisible] = useState(false); // Nuevo estado para el modal de códigos
+    const [codeModalVisible, setCodeModalVisible] = useState(false);
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
     const [selectedBatchName, setSelectedBatchName] = useState('');
     const [selectedBatchStatus, setSelectedBatchStatus] = useState('');
     const [showBarcode, setShowBarcode] = useState(false);
-    const [showQRCode, setShowQRCode] = useState(false);
     const [currentCode, setCurrentCode] = useState('');
 
     useEffect(() => {
@@ -52,23 +51,15 @@ const ProductBatchPage = () => {
             setSelectedBatchStatus(batch.status);
             setCurrentCode(batch.code);
             setProductsModalVisible(true);
-            setShowBarcode(false); // Resetea el estado
-            setShowQRCode(false);   // Resetea el estado
         } else {
-            notification.error({ message: 'No se encontraron productos en el lote.' });
+            notification.error({ message: 'No products found in this batch.' });
         }
     };
 
-    const handleShowBarcode = () => {
-        setShowBarcode(true);
-        setShowQRCode(false);
-        setCodeModalVisible(true); // Abre el modal de código
-    };
-
-    const handleShowQRCode = () => {
-        setShowQRCode(true);
-        setShowBarcode(false);
-        setCodeModalVisible(true); // Abre el modal de código
+    const handleShowCode = (code, isBarcode) => {
+        setCurrentCode(code);
+        setShowBarcode(isBarcode);
+        setCodeModalVisible(true);
     };
 
     const columns = [
@@ -111,12 +102,12 @@ const ProductBatchPage = () => {
                     </Button>
                     <Button 
                         icon={<BarcodeOutlined />} 
-                        onClick={() => { handleShowBarcode(); setCurrentCode(batch.code); }} 
+                        onClick={() => handleShowCode(batch.code, true)} 
                         style={{ marginLeft: 8 }} 
                     />
                     <Button 
                         icon={<QrcodeOutlined />} 
-                        onClick={() => { handleShowQRCode(); setCurrentCode(batch.code); }} 
+                        onClick={() => handleShowCode(batch.code, false)} 
                         style={{ marginLeft: 8 }} 
                     />
                 </>
@@ -196,23 +187,21 @@ const ProductBatchPage = () => {
                 />
             </Modal>
 
-            {/* Modal para el Código de Barras o QR */}
             <Modal
-                title={`Código de ${showBarcode ? 'Barras' : 'QR'}: ${selectedBatchName}`}
+                title={`Code: ${showBarcode ? 'Barcode' : 'QR'} - ${selectedBatchName}`}
                 visible={codeModalVisible}
                 onCancel={() => setCodeModalVisible(false)}
                 footer={null}
                 width={400}
             >
-                {showBarcode && (
+                {showBarcode ? (
                     <div style={{ textAlign: 'center' }}>
                         <img
                             src={`https://barcode.tec-it.com/barcode.ashx?data=${currentCode}&code=Code128&translate-esc=false`}
-                            alt="Código de Barras"
+                            alt="Barcode"
                         />
                     </div>
-                )}
-                {showQRCode && (
+                ) : (
                     <div style={{ textAlign: 'center' }}>
                         <QRCodeCanvas value={currentCode} />
                     </div>

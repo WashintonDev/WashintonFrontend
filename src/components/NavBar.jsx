@@ -26,8 +26,6 @@ const NavBarMenu = ({ title, onAddCategory, onSearch, showSearch = true, showAdd
             <Menu.Item disabled>Warehouse Management</Menu.Item>
             <Menu.Item><Link to="/inventory/warehouse">Warehouses</Link></Menu.Item>
             <Menu.Item><Link to="/inventory/store">Stores</Link></Menu.Item>
-            <Menu.Item disabled>Supplier Management</Menu.Item>
-            <Menu.Item><Link to="/supplier">Suppliers</Link></Menu.Item>
             <Menu.Item disabled>Products</Menu.Item>
             <Menu.Item><Link to="/inventory/category">Categories</Link></Menu.Item>
             <Menu.Item><Link to="/inventory/product">Products</Link></Menu.Item>
