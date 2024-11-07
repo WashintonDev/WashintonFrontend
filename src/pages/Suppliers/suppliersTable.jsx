@@ -6,11 +6,17 @@ import CustomForm from '../../components/Form';
 import CustomInput from '../../components/Input';
 import CustomSelect from '../../components/Select';
 import CustomDatePicker from '../../components/DatePicker';
-
+import CustomTag from '../../components/Tag';
+import CustomPagination from '../../components/Pagination';
+import CustomSpace from '../../components/Space';
+import { Button, Tooltip, Space } from 'antd';
+import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import Navbar from '../../components/Navbar';
 
 const SuppliersTable = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
   const endpointUrl = SupplierData;
 
   useEffect(() => {
@@ -32,36 +38,89 @@ const SuppliersTable = () => {
     console.log('Form submitted with values:', values);
   };
 
+  const handleEdit = (record) => {
+    console.log('Edit record:', record);
+  };
+
+  const handleDelete = (supplier_id) => {
+    console.log('Delete supplier with ID:', supplier_id);
+  };
+
+  const handleAdd = () => {
+    setEditingSupplier(null);
+    form.resetFields();
+    setIsModalVisible(true);
+};
+
+const handleSearch = (value) => {
+  setSearchText(value);
+};
+
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'supplier_id',
-      key: 'supplier_id',
+      title: 'No.',
+      key: 'index',
+      render: (_, __, index) => (pagination.current - 1) * pagination.pageSize + index + 1,
+      width: 60,
     },
     {
       title: 'Name',
       dataIndex: 'name',
       key: 'name',
-    },
-    {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
+      ellipsis: true,
+      width: 250,
     },
     {
       title: 'Email',
       dataIndex: 'email',
       key: 'email',
+      ellipsis: true,
+      render: (text, record) => (
+        <CustomTag color="">{record.email}</CustomTag>
+      ),
+      width: 250,
     },
     {
       title: 'Phone',
       dataIndex: 'phone',
       key: 'phone',
+      ellipsis: true,
+      render: (text, record) => (
+        <CustomTag color="blue">{record.phone}</CustomTag>
+      ),
+      width: 150,
     },
     {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+      ellipsis: true,
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_, record) => (
+        <Space size="middle">
+          <Tooltip title="Edit" placement="bottom">
+            <Button 
+              type="link" 
+              icon={<EditOutlined />} 
+              onClick={() => handleEdit(record)}
+              style={{ padding: 0 }}
+            />
+          </Tooltip>
+          <Tooltip title="Delete" placement="bottom">
+            <Button 
+              danger 
+              type="link" 
+              icon={<DeleteOutlined />} 
+              onClick={() => handleDelete(record.supplier_id)}
+              style={{ padding: 0 }}
+            />
+          </Tooltip>
+        </Space>
+      ),
+      width: 120,
     },
   ];
 
@@ -114,8 +173,13 @@ const SuppliersTable = () => {
 
   return (
     <div>
-      <h1>Suppliers</h1>
-      <CustomTable columns={columns} dataSource={suppliers} loading={loading} />
+      <Navbar 
+        title="Suppliers" 
+        buttonText="Add Supplier" 
+        onAddCategory={handleAdd} 
+        onSearch={handleSearch}
+    />
+      <CustomTable columns={columns} dataSource={suppliers} loading={loading} pagination={pagination} />
       <CustomForm onFinish={handleFormSubmit} formItems={formItems} />
     </div>
   );

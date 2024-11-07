@@ -1,12 +1,9 @@
 import React from 'react';
 import { Modal } from 'antd';
 
-const CustomModal = ({ visible, onCancel, onOk, title, children }) => {
-  return (
-    <Modal visible={visible} onCancel={onCancel} onOk={onOk} title={title}>
-      {children}
-    </Modal>
-  );
+const CustomModal = (props) => {
+    console.log('CustomModal props:', props);
+    return <Modal {...props} open={props.open} />;
 };
 
 export default CustomModal;
