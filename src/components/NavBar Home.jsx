@@ -1,20 +1,19 @@
 import React from 'react'; 
-import { Link } from 'react-router-dom';
 import { Dropdown, Menu, Button, Input } from 'antd';
 import { UserOutlined, SettingOutlined, LogoutOutlined } from '@ant-design/icons';
 import { signOut } from "firebase/auth";
 import logo from "../assets/images/logowashsmall.png";
 import { auth } from '../pages/login/firebaseConfig'; // Asegúrate de importar tu configuración de Firebase
-import { useNavigate } from "react-router-dom"; // Para la navegación
+import { useNavigate } from "react-router-dom"; 
 
-const NavBarHome = ({ title, onSearch, showSearch = true }) => {
-    const navigate = useNavigate(); // Hook de navegación para redirigir a la página de login
+const NavBarHome = ({  onSearch, showSearch = true }) => {
+    const navigate = useNavigate(); 
 
     const handleLogout = async () => {
         try {
             await signOut(auth); // Firebase sign out
             localStorage.removeItem("user"); // Eliminar usuario del localStorage
-            navigate('/login'); // Redirige a la página de login
+            navigate('/login'); 
         } catch (error) {
             console.error('Error logging out', error);
         }
