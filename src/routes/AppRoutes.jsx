@@ -6,7 +6,7 @@ import Suppliers from '../pages/Suppliers/Suppliers';
 import Login from '../pages/login/Login';
 import SignUp from '../pages/login/Sign-up';
 import Inventory from '../pages/Inventory/Inventory';
-
+import Sales from '../pages/Sales/Sales';
 
 const AppRoutes = () => (
   <Router>
@@ -17,6 +17,7 @@ const AppRoutes = () => (
       <Route path="/suppliers/*" element={<Suppliers />} />
       <Route path="/inventory/*" element={<Inventory />} />
       <Route path="/sign-up" element={<SignUp />} />
+      <Route path="/sales/*" element={<Sales />} />
       </Route>
     </Routes>
   </Router>
