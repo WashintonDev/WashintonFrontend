@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Form, Input, Button, Checkbox, Typography, Divider, Space, message } from "antd";
-import { MailOutlined, LockOutlined } from "@ant-design/icons";
+import Icon, { MailOutlined, LockOutlined } from "@ant-design/icons";
 import { auth } from "./firebaseConfig"; // Asegúrate de tener la configuración de Firebase correctamente importada
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import "../../assets/styles/login.css";
@@ -74,9 +74,9 @@ const SignUp = () => {
             />
           </Form.Item>
 
-          <Form.Item>
+          {/* <Form.Item>
             <Checkbox>Agree to Terms and Conditions</Checkbox>
-          </Form.Item>
+          </Form.Item> */}
 
           <Form.Item>
             <Button
@@ -103,6 +103,6 @@ const SignUp = () => {
       </Text>
     </div>
   );
-};
+    };
 
 export default SignUp;

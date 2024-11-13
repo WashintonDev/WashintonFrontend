@@ -1,40 +1,21 @@
 import React, { useState } from 'react';
-import { Dropdown, Menu, Button, Input, Badge, Layout } from 'antd';
+import { Layout, Menu, Badge } from 'antd';
 import {
-    UserOutlined, LogoutOutlined, FundProjectionScreenOutlined, SolutionOutlined,
-    FormOutlined, ShoppingOutlined, MenuFoldOutlined, ExclamationCircleOutlined,
-    TruckOutlined, FundOutlined
+    FundProjectionScreenOutlined,
+    SolutionOutlined,
+    FormOutlined,
+    ShoppingOutlined,
+    UserOutlined,
+    FundOutlined,
+    TruckOutlined,
+    ExclamationCircleOutlined
 } from '@ant-design/icons';
-import { signOut } from "firebase/auth";
-import { auth } from '../pages/login/firebaseConfig';
-import { Link, useNavigate } from "react-router-dom";
-import "../assets/styles/login.css";
+import { Link } from 'react-router-dom';
 
 const { Sider } = Layout;
 
-const NavBarHome = ({ onSearch, showSearch = true }) => {
-    const [collapsed, setCollapsed] = useState(true); 
-    const navigate = useNavigate();
-
-    // Función de logout
-    const handleLogout = async () => {
-        try {
-            await signOut(auth);
-            localStorage.removeItem("user");
-            navigate('/login');
-        } catch (error) {
-            console.error('Error logging out', error);
-        }
-    };
-
-    // Menú de configuración
-    const settingsMenu = (
-        <Menu>
-            <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
-                Log Out
-            </Menu.Item>
-        </Menu>
-    );
+const SideBar = () => {
+    const [collapsed, setCollapsed] = useState(false);
 
     return (
         <Layout>
@@ -43,13 +24,12 @@ const NavBarHome = ({ onSearch, showSearch = true }) => {
                 collapsed={collapsed}
                 onCollapse={setCollapsed}
                 width={250}
-                style={{ height: '100vh', position: 'fixed', left: 0  }}
-                expandIcon = {null}
-                
+                style={{ height: '100vh', position: 'fixed', left: 0 }}
+                expandIcon={null}
             >
                 <Menu
                     mode="inline"
-                    style={{ height: '100%', borderRight: 50 , paddingTop:'50px'}}
+                    style={{ height: '100%', borderRight: 50 }}
                     defaultOpenKeys={['accountSettings']}
                     expandIcon={null}
                 >
@@ -65,15 +45,9 @@ const NavBarHome = ({ onSearch, showSearch = true }) => {
                         <Link to="/reports">Reports</Link>
                     </Menu.Item>
 
-                    <Menu.SubMenu key="sales" icon={<ShoppingOutlined />}
-                        >
-                        <Menu.Item key="sales">
-                            <Link to="/sales">Profile</Link>
-                        </Menu.Item>
-                        <Menu.Item key="sales-report">
-                            <Link to="/sales-report">Settings</Link>
-                        </Menu.Item>
-                    </Menu.SubMenu>
+                    <Menu.Item key="sales" icon={<ShoppingOutlined />}>
+                        Sales <Badge count={4} style={{ backgroundColor: '#52c41a' }} />
+                    </Menu.Item>
 
                     <Menu.SubMenu key="accountSettings" icon={<UserOutlined />} title="Account Settings" expandIcon={null}>
                         <Menu.Item key="profile">
@@ -87,7 +61,7 @@ const NavBarHome = ({ onSearch, showSearch = true }) => {
                         </Menu.Item>
                     </Menu.SubMenu>
 
-                    <Menu.SubMenu key="Analytics" icon={<FundOutlined />} title="Analytics"expandIcon={null}>
+                    <Menu.SubMenu key="Analytics" icon={<FundOutlined />} title="Analytics" expandIcon={null}>
                         <Menu.Item key="SalesGraphs">Level 1</Menu.Item>
                         <Menu.Item key="SalesGraphs">Level 2</Menu.Item>
                         <Menu.Item key="SalesGraphs">Level 3</Menu.Item>
@@ -120,22 +94,8 @@ const NavBarHome = ({ onSearch, showSearch = true }) => {
                     </Menu.ItemGroup>
                 </Menu>
             </Sider>
-
-            <Layout>
-                <div style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', backgroundColor: '#f8fafc', borderBottom: '1px solid #ddd' }}>
-                    <Button icon={<MenuFoldOutlined />} shape="square" onClick={() => setCollapsed(!collapsed)} />
-
-                    {showSearch && <Input.Search placeholder="Search" style={{ marginLeft: '10px' }} />}
-
-                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
-                        <Dropdown overlay={settingsMenu} placement="bottomLeft" trigger={['click']}>
-                            <Button icon={<UserOutlined />} shape="circle" style={{ marginLeft: '10px' }} />
-                        </Dropdown>
-                    </div>
-                </div>
-            </Layout>
         </Layout>
     );
 };
 
-export default NavBarHome;
+export default SideBar;</Menu.Item>
