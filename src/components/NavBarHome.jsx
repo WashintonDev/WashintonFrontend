@@ -68,10 +68,10 @@ const NavBarHome = ({ onSearch, showSearch = true }) => {
                     <Menu.SubMenu key="sales" icon={<ShoppingOutlined />}
                         >
                         <Menu.Item key="sales">
-                            <Link to="/sales">Profile</Link>
+                            <Link to="/sales">Sales</Link>
                         </Menu.Item>
                         <Menu.Item key="sales-report">
-                            <Link to="/sales-report">Settings</Link>
+                            <Link to="/sales-report">Sales-Reports</Link>
                         </Menu.Item>
                     </Menu.SubMenu>
 
@@ -125,7 +125,7 @@ const NavBarHome = ({ onSearch, showSearch = true }) => {
                 <div style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', backgroundColor: '#f8fafc', borderBottom: '1px solid #ddd' }}>
                     <Button icon={<MenuFoldOutlined />} shape="square" onClick={() => setCollapsed(!collapsed)} />
 
-                    {showSearch && <Input.Search placeholder="Search" style={{ marginLeft: '10px' }} />}
+                    {showSearch && <Input.Search placeholder="Search" style={{ marginLeft: '100px' }} />}
 
                     <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
                         <Dropdown overlay={settingsMenu} placement="bottomLeft" trigger={['click']}>
