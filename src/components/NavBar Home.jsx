@@ -6,7 +6,7 @@ import {
     TruckOutlined, FundOutlined
 } from '@ant-design/icons';
 import { signOut } from "firebase/auth";
-import { auth } from '../pages/login/firebaseConfig';
+import { auth } from '../services/firebaseConfig';
 import { Link, useNavigate } from "react-router-dom";
 import "../assets/styles/login.css";
 
