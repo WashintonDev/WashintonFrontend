@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import CategoryPage from './CategoryPage';
 import ProductPage from './ProductPage';
-import RestockProductsPage from './RestockProductsPage';
+import RestockProductsPage from '../Suppliers/RestockProductsPage';
 import StorePage from './StorePage';
 import WarehousePage from './WarehousePage';
 import InventoryPage from './InventoryPage';

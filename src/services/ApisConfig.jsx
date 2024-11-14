@@ -1,6 +1,5 @@
-export const SupplierData = "/supplier"
 
-const BASE_API_URL = 'https://washinton.store/api/';
+const BASE_API_URL = import.meta.env.VITE_API_URL;
 
 // Category API URLs
 export const API_URL_CATEGORIES = BASE_API_URL + 'category/';

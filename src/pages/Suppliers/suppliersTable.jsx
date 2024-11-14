@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { fetchData } from '../../services/services';
-import { SupplierData } from '../../services/ApisConfig';
+import { API_URL_SUPPLIERS } from '../../services/ApisConfig';
 import CustomTable from '../../components/Table';
 import CustomForm from '../../components/Form';
 import CustomInput from '../../components/Input';
 import CustomSelect from '../../components/Select';
 import CustomDatePicker from '../../components/DatePicker';
 import CustomTag from '../../components/Tag';
-import CustomPagination from '../../components/Pagination';
-import CustomSpace from '../../components/Space';
 import { Button, Tooltip, Space } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import Navbar from '../../components/Navbar';
@@ -17,7 +15,7 @@ const SuppliersTable = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
-  const endpointUrl = SupplierData;
+  const endpointUrl = API_URL_SUPPLIERS;
 
   useEffect(() => {
     const getSuppliers = async () => {
@@ -186,3 +184,6 @@ const handleSearch = (value) => {
 };
 
 export default SuppliersTable;
+
+//HACER QUE EN UN MODULO PUEDA DESCARGAR UN ARCHIVO CSV EN LA CUAL EN UN MODULO PODAMOS PONER 
+//IMPORTAR ESE CSV Y APAREZCA GRAFICAS Y TABLAS EN LA PAGINA
