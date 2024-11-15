@@ -40,7 +40,7 @@ const NavBarMenu = ({ title, onAddCategory, onSearch, showSearch = true, showAdd
             <h2 style={{ margin: 0 }}>{title}</h2>
             {showSearch && (
                 <Input.Search
-                    placeholder="Buscar..."
+                    placeholder="Search..."
                     onChange={e => onSearch(e.target.value)} // Llama a onSearch instantáneamente
                     style={{ width: 200, marginLeft: '20px' }}
                 />
