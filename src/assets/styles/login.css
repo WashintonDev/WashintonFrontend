@@ -120,19 +120,17 @@
   background-color: white !important;
 }
 
-/* Estilos para el Sider */
-
-.home-content {
-  transition: margin-left 0.3s;
+.home {
+  padding: 24px;
+  transition: margin-left 0.3s ease;
 }
 
-/* Cuando el sider esté expandido */
-.home-content.sider-expanded {
-  margin-left: 250px; /* Ancho del Sider cuando está expandido */
-}
-
-/* Cuando el sider esté colapsado */
-.home-content.sider-collapsed {
+/* Cuando el Sider está expandido */
+.home.collapsed {
   margin-left: 80px; /* Ancho del Sider cuando está colapsado */
 }
 
+/* Cuando el Sider está expandido */
+.home:not(.collapsed) {
+  margin-left: 250px; /* Ancho del Sider cuando está expandido */
+}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Form, Input, Button, Checkbox, Typography, Divider, Space, message } from "antd";
 import { MailOutlined, LockOutlined } from "@ant-design/icons";
 import { auth } from "../../services/firebaseConfig"; // Asegúrate de tener la configuración de Firebase correctamente importada
