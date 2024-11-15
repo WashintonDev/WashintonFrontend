@@ -11,4 +11,3 @@ export const API_URL_WAREHOUSES = BASE_API_URL + 'warehouse/';
 export const API_URL_INVENTORIES = BASE_API_URL + 'inventory/';
 export const API_URL_PRODUCT_BATCH = BASE_API_URL + 'product_batch/';
 export const API_URL_BATCH = BASE_API_URL + 'batch/';
-//hola  2
