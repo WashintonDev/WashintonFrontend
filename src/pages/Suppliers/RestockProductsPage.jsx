@@ -3,6 +3,8 @@ import { Table, Input, notification, Button, Image, Select, Modal } from 'antd';
 import { API_URL_PRODUCTS, API_URL_CATEGORIES, API_URL_BATCH, API_URL_PRODUCT_BATCH } from '../../services/ApisConfig';
 import { CloseOutlined } from '@ant-design/icons';
 import Navbar from '../../components/Navbar';
+import CardSkeleton from '../../components/CardSkeleton/CardSkeleton';
+
 
 const RestockProductsPage = () => {
     const [products, setProducts] = useState([]);
@@ -14,6 +16,8 @@ const RestockProductsPage = () => {
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
     const [newBatchName, setNewBatchName] = useState('');
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [categoriesLoading, setCategoriesLoading] = useState(true);
 
     useEffect(() => {
         fetchProducts();
@@ -22,25 +26,31 @@ const RestockProductsPage = () => {
 
     const fetchCategories = async () => {
         try {
+            setCategoriesLoading(true)
             const response = await fetch(API_URL_CATEGORIES);
             if (!response.ok) throw new Error('Error fetching categories');
             const data = await response.json();
             setCategories(data);
+            setCategoriesLoading(false);
         } catch (error) {
+            setCategoriesLoading(false);
             notification.error({ message: error.message || 'Error fetching categories' });
         }
     };
 
     const fetchProducts = async () => {
         try {
+            setLoading(true);
             const response = await fetch(`${API_URL_PRODUCTS}?page=${pagination.current}&pageSize=${pagination.pageSize}`);
             if (!response.ok) throw new Error('Error fetching products');
             const data = await response.json();
             const sortedData = data.sort((a, b) => a.product_id - b.product_id);
             setProducts(sortedData);
             setOriginalProducts(sortedData);
+            setLoading(false);
         } catch (error) {
             notification.error({ message: error.message || 'Error fetching products' });
+            setLoading(false);
         }
     };
 
@@ -213,7 +223,7 @@ const RestockProductsPage = () => {
             key: 'category',
             render: (text, record) => {
                 const category = categories.find(cat => cat.category_id === record.category_id);
-                return <span>{category ? category.name : 'Unknown Category'}</span>;
+                return <span>{category ? category.name : 'Sin Category'}</span>;
             },
             width: 100,
             align: 'center',
@@ -234,69 +244,92 @@ const RestockProductsPage = () => {
     ];
 
     return (
-        <div>
-            <Navbar title="Restock Products" showSearch={false} showAdd={false} />
-            <div style={{ padding: '20px', display: 'flex', justifyContent: 'center' }}>
-                <div style={{ flex: 1, maxWidth: '850px' }}>
-                    <Input.Search
-                        placeholder="Search by name"
-                        onChange={(e) => handleSearch(e.target.value)}
-                        style={{ marginBottom: 10 }}
-                    />
-                    <Table
-                        dataSource={filteredProducts}
-                        rowKey="product_id"
-                        pagination={{
-                            current: pagination.current,
-                            pageSize: pagination.pageSize,
-                            total: filteredProducts.length,
-                            onChange: (page) => setPagination({ ...pagination, current: page }),
-                        }}
-                        columns={columns}
-                        style={{ maxWidth: '100%', margin: '0 auto' }}
-                    />
-                </div>
-                <div style={{ flex: 0.4, paddingLeft: '50px' }}>
-                    <h3 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', marginTop: '0px' }}>
-                        Selected Products
-                        <Button
-                            type="primary"
-                            onClick={handleRestock}
-                            disabled={selectedProducts.length === 0}
-                        >
-                            Restock
-                        </Button>
-                    </h3>
-                    <ul>
-                        {selectedProducts.map(product => (
-                            <li key={product.id} style={{ display: 'flex', alignItems: 'center' }}>
-                                                                <CloseOutlined onClick={() => handleRemoveProduct(product.id)} style={{ marginRight: 8, cursor: 'pointer', color: 'red' }} />
-                                <Image
-                                    width={30}
-                                    src={product.image}
-                                    style={{ cursor: 'pointer', marginRight: 8 }}
-                                />
-                                {product.name}: {product.quantity}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+      <div>
+        <Navbar title="Restock Products" showSearch={false} showAdd={false} />
+        <div
+          style={{ padding: "20px", display: "flex", justifyContent: "center" }}
+        >
+          <div style={{ flex: 1, maxWidth: "850px" }}>
+            <Input.Search
+              placeholder="Search by name"
+              onChange={(e) => handleSearch(e.target.value)}
+              style={{ marginBottom: 10 }}
+            />
+            {loading && categoriesLoading ? (
+              <CardSkeleton />
+            ) : (
+            <div className="">
+              <Table
+                dataSource={filteredProducts}
+                rowKey="product_id"
+                pagination={{
+                  current: pagination.current,
+                  pageSize: pagination.pageSize,
+                  total: filteredProducts.length,
+                  onChange: (page) =>
+                    setPagination({ ...pagination, current: page }),
+                }}
+                columns={columns}
+                style={{ maxWidth: "100%", margin: "0 auto" }}
+              />
             </div>
-
-            {/* Modal para ingresar el nombre del nuevo lote */}
-            <Modal
-    title="Crear Nuevo Lote"
-    visible={isModalVisible}
-    onOk={handleCreateBatch}
-    onCancel={() => setIsModalVisible(false)}
->
-    <Input 
-        placeholder="Nombre del lote" 
-        value={newBatchName} 
-        onChange={(e) => setNewBatchName(e.target.value)} 
-    />
-</Modal>
+            )} 
+          </div>
+          <div style={{ flex: 0.4, paddingLeft: "50px" }}>
+            <h3
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "10px",
+                marginTop: "0px",
+              }}
+            >
+              Selected Products
+              <Button
+                type="primary"
+                onClick={handleRestock}
+                disabled={selectedProducts.length === 0}
+              >
+                Restock
+              </Button>
+            </h3>
+            <ul>
+              {selectedProducts.map((product) => (
+                <li
+                  key={product.id}
+                  style={{ display: "flex", alignItems: "center" }}
+                >
+                  <CloseOutlined
+                    onClick={() => handleRemoveProduct(product.id)}
+                    style={{ marginRight: 8, cursor: "pointer", color: "red" }}
+                  />
+                  <Image
+                    width={30}
+                    src={product.image}
+                    style={{ cursor: "pointer", marginRight: 8 }}
+                  />
+                  {product.name}: {product.quantity}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
+
+        {/* Modal para ingresar el nombre del nuevo lote */}
+        <Modal
+          title="Crear Nuevo Lote"
+          visible={isModalVisible}
+          onOk={handleCreateBatch}
+          onCancel={() => setIsModalVisible(false)}
+        >
+          <Input
+            placeholder="Nombre del lote"
+            value={newBatchName}
+            onChange={(e) => setNewBatchName(e.target.value)}
+          />
+        </Modal>
+      </div>
     );
 };
 
