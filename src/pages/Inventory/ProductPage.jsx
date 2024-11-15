@@ -1,23 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Modal, Form, Input, notification, Button, Space, Tooltip, Tag, Image } from 'antd';
-import { API_URL_PRODUCTS, API_URL_CATEGORIES } from '../../services/ApisConfig';
-import { EditOutlined, DeleteOutlined, DollarOutlined } from '@ant-design/icons';
+import { Table, Modal, Form, Input, notification, Button, Space, Tooltip, Tag, Image, Select, Upload } from 'antd';
+import { API_URL_PRODUCTS, API_URL_CATEGORIES, API_URL_SUPPLIERS } from '../../services/ApisConfig';
+import { EditOutlined, DeleteOutlined, DollarOutlined, UploadOutlined } from '@ant-design/icons';
 import Navbar from '../../components/Navbar';
+
+const { Option } = Select;
 
 const ProductPage = () => {
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [parentCategories, setParentCategories] = useState([]);
+    const [subCategories, setSubCategories] = useState([]);
+    const [suppliers, setSuppliers] = useState([]);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
     const [form] = Form.useForm();
+    const [file, setFile] = useState([]);
     const [searchText, setSearchText] = useState('');
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
-    const [imageModalVisible, setImageModalVisible] = useState(false);
-    const [selectedImage, setSelectedImage] = useState(null);
+    
 
     useEffect(() => {
         fetchProducts();
         fetchCategories();
+        fetchSuppliers();
     }, []);
 
     const fetchCategories = async () => {
@@ -26,8 +32,20 @@ const ProductPage = () => {
             if (!response.ok) throw new Error('Error fetching categories');
             const data = await response.json();
             setCategories(data);
+            setParentCategories(data.filter(cat => cat.parent_id === null));
         } catch (error) {
             notification.error({ message: error.message || 'Error fetching categories' });
+        }
+    };
+
+    const fetchSuppliers = async () => {
+        try {
+            const response = await fetch(API_URL_SUPPLIERS);
+            if (!response.ok) throw new Error('Error fetching suppliers');
+            const data = await response.json();
+            setSuppliers(data);
+        } catch (error) {
+            notification.error({ message: error.message || 'Error fetching suppliers' });
         }
     };
 
@@ -36,8 +54,7 @@ const ProductPage = () => {
             const response = await fetch(API_URL_PRODUCTS);
             if (!response.ok) throw new Error('Error fetching products');
             const data = await response.json();
-            const sortedProducts = data.sort((a, b) => a.product_id - b.product_id);
-            setProducts(sortedProducts);
+            setProducts(data.sort((a, b) => a.product_id - b.product_id));
         } catch (error) {
             notification.error({ message: error.message || 'Error fetching products' });
         }
@@ -46,21 +63,53 @@ const ProductPage = () => {
     const handleAdd = () => {
         setEditingProduct(null);
         form.resetFields();
+        setFile([]); // Esto asegura que esté vacío al agregar un nuevo producto
         setIsModalVisible(true);
+    };
+    
+
+    const handleEdit = async (product) => {
+        setEditingProduct(product);
+    
+        try {
+            const response = await fetch(`${API_URL_PRODUCTS}sku/${product.sku}`);
+            if (!response.ok) throw new Error('Error fetching product with categories');
+            const data = await response.json();
+    
+            const subCategory = data.sub_category_name;
+            const parentCategory = data.parent_category_name;
+    
+            setSubCategories(categories.filter(cat => cat.parent_id === categories.find(cat => cat.name === parentCategory)?.category_id));
+    
+            form.setFieldsValue({
+                name: data.product.name,
+                description: data.product.description,
+                price: data.product.price,
+                type: data.product.type,
+                category_id: categories.find(cat => cat.name === subCategory)?.category_id,
+                supplier_id: data.product.supplier_id,
+                status: data.product.status,
+                parentCategory: categories.find(cat => cat.name === parentCategory)?.category_id,
+            });
+
+            // Configurar la imagen actual para su previsualización
+            setFile(data.product.image ? [{
+                uid: '-1',
+                name: 'image.png',
+                status: 'done',
+                url: `https://washinton.store/${data.product.image}`,
+            }] : []);
+            setIsModalVisible(true);
+        } catch (error) {
+            notification.error({ message: error.message || 'Error fetching product with categories' });
+        }
     };
 
-    const handleEdit = (product) => {
-        setEditingProduct(product);
-        form.setFieldsValue({
-            name: product.name,
-            sku: product.sku,
-            description: product.description,
-            price: product.price,
-            type: product.type,
-            image: product.image
-        });
-        setIsModalVisible(true);
+    const handleUploadChange = ({ fileList }) => {
+        setFile(fileList.slice(-1)); // Mantén solo el último archivo seleccionado para evitar duplicados
     };
+    
+    
 
     const handleDelete = async (product_id) => {
         try {
@@ -75,50 +124,70 @@ const ProductPage = () => {
     const handleOk = async () => {
         try {
             const values = await form.validateFields();
-            if (editingProduct) {
-                const response = await fetch(`${API_URL_PRODUCTS}${editingProduct.product_id}/`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        ...values,
-                        image: values.image,
-                    }),
-                });
-                if (!response.ok) {
-                    throw new Error('Error updating product');
+            const jsonPayload = {};
+    
+            Object.keys(values).forEach(key => {
+                if (key !== 'sku' && (!editingProduct || editingProduct[key] !== values[key])) {
+                    jsonPayload[key] = values[key];
                 }
-                notification.success({ message: 'Product updated successfully' });
+            });
+    
+            let body;
+            let headers = {};
+    
+            // Usar FormData si hay un archivo para enviar
+            if (file && file.length > 0 && file[0].originFileObj) {
+                const formData = new FormData();
+                Object.keys(jsonPayload).forEach(key => formData.append(key, jsonPayload[key]));
+                formData.append('image', file[0].originFileObj);
+                body = formData;
             } else {
-                await fetch(API_URL_PRODUCTS, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(values),
-                });
-                notification.success({ message: 'Product created successfully' });
+                // Si no hay archivo, enviamos JSON
+                body = JSON.stringify(jsonPayload);
+                headers = { 'Content-Type': 'application/json' };
             }
-            fetchProducts();
-            setIsModalVisible(false);
+    
+            // Verificar la URL
+            const url = editingProduct
+                ? `${API_URL_PRODUCTS}${editingProduct.product_id}/`
+                : API_URL_PRODUCTS;
+    
+            console.log("Datos para JSON (Postman):", JSON.stringify(jsonPayload, null, 2));
+            console.log("URL de actualización o creación:", url);
+    
+            const options = {
+                method: editingProduct ? 'PATCH' : 'POST',
+                headers,
+                body,
+            };
+    
+            const response = await fetch(url, options);
+    
+            if (response.ok) {
+                notification.success({ message: editingProduct ? 'Product updated successfully' : 'Product created successfully' });
+                fetchProducts();
+                setIsModalVisible(false);
+            } else {
+                const errorData = await response.json();
+                console.error("Error en la respuesta del servidor:", errorData);
+                throw new Error('Error saving product');
+            }
         } catch (error) {
+            console.error("Fetch error:", error);
             notification.error({ message: error.message || 'Error saving product' });
         }
     };
+    
+    
 
     const handleCancel = () => {
         setIsModalVisible(false);
     };
 
-    const handleSearch = (value) => {
-        setSearchText(value);
+    const handleParentCategoryChange = (parentId) => {
+        setSubCategories(categories.filter(cat => cat.parent_id === parentId));
+        form.setFieldsValue({ category_id: null });
     };
-
-    const filteredProducts = products.filter(product =>
-        product.name.toLowerCase().includes(searchText.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchText.toLowerCase())
-    );
 
     const columns = [
         {
@@ -142,7 +211,7 @@ const ProductPage = () => {
             render: (text, record) => (
                 <Tag color="orange">{record.sku}</Tag>
             ),
-            width: 120,
+            width: 130,
         },
         {
             title: 'Price',
@@ -181,15 +250,15 @@ const ProductPage = () => {
                 <Image
                     width={50}
                     height={50}
-                    src={record.image || 'https://via.placeholder.com/50'}
+                    src={record.image ? `https://washinton.store/${record.image}` : 'https://via.placeholder.com/50'}
                     preview={{ 
-                        src: record.image || 'https://via.placeholder.com/800', 
+                        src: record.image ? `https://washinton.store/${record.image}` : 'https://via.placeholder.com/800', 
                         title: record.name 
-                    }} // Usar el preview de Ant Design
+                    }}
                     style={{
                         cursor: 'pointer',
-                        objectFit: 'contain', // Asegura que la imagen no se deforme
-                        borderRadius: '5px', // Opcional: añadir un borde redondeado
+                        objectFit: 'contain',
+                        borderRadius: '5px',
                     }}
                 />
             ),
@@ -199,20 +268,11 @@ const ProductPage = () => {
             key: 'actions',
             render: (_, record) => (
                 <Space size="middle">
-                    <Tooltip title="Edit" placement="bottom">
-                        <Button
-                            type="link"
-                            icon={<EditOutlined />}
-                            onClick={() => handleEdit(record)}
-                        />
+                    <Tooltip title="Edit">
+                        <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
                     </Tooltip>
-                    <Tooltip title="Delete" placement="bottom">
-                        <Button
-                            danger
-                            type="link"
-                            icon={<DeleteOutlined />}
-                            onClick={() => handleDelete(record.product_id)}
-                        />
+                    <Tooltip title="Delete">
+                        <Button danger type="link" icon={<DeleteOutlined />} onClick={() => handleDelete(record.product_id)} />
                     </Tooltip>
                 </Space>
             ),
@@ -222,60 +282,101 @@ const ProductPage = () => {
 
     return (
         <div>
-            <Navbar
-                title="Products"
-                buttonText="Add Product"
-                onAddCategory={handleAdd}
-                onSearch={handleSearch}
-            />
-
+            <Navbar title="Products" buttonText="Add Product" onAddCategory={handleAdd} />
             <Table
-                dataSource={filteredProducts}
+                dataSource={products.filter(product =>
+                    product.name.toLowerCase().includes(searchText.toLowerCase()) ||
+                    product.description.toLowerCase().includes(searchText.toLowerCase())
+                )}
                 columns={columns}
                 rowKey="product_id"
                 pagination={{
                     current: pagination.current,
                     pageSize: pagination.pageSize,
-                    total: filteredProducts.length,
-                    showSizeChanger: true,
-                    onChange: (page, pageSize) => {
-                        setPagination({ current: page, pageSize });
-                    },
+                    onChange: (page, pageSize) => setPagination({ current: page, pageSize }),
                 }}
-                style={{ maxWidth: '80%', margin: '0 auto', fontSize: '0.9em' }}
-                bordered
             />
+<Modal
+    title={editingProduct ? 'Edit Product' : 'Add Product'}
+    visible={isModalVisible}
+    onOk={handleOk}
+    onCancel={handleCancel}
+>
+    <Form form={form} layout="vertical">
+        <Form.Item name="name" label="Name" rules={[{ required: true }]}>
+            <Input />
+        </Form.Item>
+        <Form.Item name="description" label="Description">
+            <Input.TextArea />
+        </Form.Item>
+        <Form.Item name="price" label="Price" rules={[{ required: true }]}>
+            <Input />
+        </Form.Item>
+        <Form.Item name="type" label="Type" rules={[{ required: true }]}>
+            <Input />
+        </Form.Item>
+        <Form.Item label="Image">
+    <Upload
+        listType={file.length > 0 ? 'picture-card' : 'text'}
+        fileList={file}
+        onChange={handleUploadChange}
+        beforeUpload={(selectedFile) => {
+            setFile([{
+                uid: '-1',
+                name: selectedFile.name,
+                status: 'done',
+                url: URL.createObjectURL(selectedFile),
+                originFileObj: selectedFile,
+            }]);
+            return false; // Prevenir el autoupload
+        }}
+        onRemove={() => setFile([])} // Asegúrate de que el archivo se elimine al removerlo
+    >
+        {file.length === 0 && <Button icon={<UploadOutlined />}>Select Image</Button>}
+    </Upload>
+</Form.Item>
 
-            <Modal
-                title={editingProduct ? 'Edit Product' :                 'Add Product'}
-                visible={isModalVisible}
-                onOk={handleOk}
-                onCancel={handleCancel}
-            >
-                <Form form={form} layout="vertical">
-                    <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Please input the product name!' }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="sku" label="SKU" rules={[{ required: true, message: 'Please input the SKU!' }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="description" label="Description">
-                        <Input.TextArea />
-                    </Form.Item>
-                    <Form.Item name="price" label="Price" rules={[{ required: true, message: 'Please input the price!' }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="type" label="Type" rules={[{ required: true, message: 'Please input the type!' }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="image" label="Image URL">
-                        <Input placeholder="Enter image URL" />
-                    </Form.Item>
-                </Form>
-            </Modal>
+
+        <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+            <Select>
+                <Option value="active">Active</Option>
+                <Option value="inactive">Inactive</Option>
+            </Select>
+        </Form.Item>
+        <Form.Item label="Category" name="parentCategory" rules={[{ required: true, message: 'Please select a category' }]}>
+            <Select placeholder="Select parent category" onChange={handleParentCategoryChange}>
+                {parentCategories.map(category => (
+                    <Option key={category.category_id} value={category.category_id}>
+                        {category.name}
+                    </Option>
+                ))}
+            </Select>
+        </Form.Item>
+        <Form.Item name="category_id" label="Subcategory" rules={[{ required: true, message: 'Please select a subcategory' }]}>
+            <Select placeholder="Select subcategory">
+                {subCategories.map(subCategory => (
+                    <Option key={subCategory.category_id} value={subCategory.category_id}>
+                        {subCategory.name}
+                    </Option>
+                ))}
+            </Select>
+        </Form.Item>
+        <Form.Item name="supplier_id" label="Supplier" rules={[{ required: true }]}>
+            <Select showSearch placeholder="Select a supplier">
+                {suppliers.map(supplier => (
+                    <Option key={supplier.supplier_id} value={supplier.supplier_id}>
+                        {supplier.name}
+                    </Option>
+                ))}
+            </Select>
+        </Form.Item>
+    </Form>
+</Modal>
 
         </div>
     );
+    
+    
 };
 
 export default ProductPage;
