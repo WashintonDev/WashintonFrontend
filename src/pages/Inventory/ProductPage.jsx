@@ -18,7 +18,8 @@ const ProductPage = () => {
     const [file, setFile] = useState([]);
     const [searchText, setSearchText] = useState('');
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
-    
+    const [removeImage, setRemoveImage] = useState(false);
+
 
     useEffect(() => {
         fetchProducts();
@@ -69,8 +70,6 @@ const ProductPage = () => {
     
 
     const handleEdit = async (product) => {
-        setEditingProduct(product);
-    
         try {
             const response = await fetch(`${API_URL_PRODUCTS}sku/${product.sku}`);
             if (!response.ok) throw new Error('Error fetching product with categories');
@@ -79,19 +78,32 @@ const ProductPage = () => {
             const subCategory = data.sub_category_name;
             const parentCategory = data.parent_category_name;
     
-            setSubCategories(categories.filter(cat => cat.parent_id === categories.find(cat => cat.name === parentCategory)?.category_id));
+            // Obtener IDs de categoría
+            const parentCategoryId = categories.find(cat => cat.name === parentCategory)?.category_id;
+            const subCategoryId = categories.find(cat => cat.name === subCategory)?.category_id;
     
+            // Actualizar subcategorías disponibles
+            setSubCategories(categories.filter(cat => cat.parent_id === parentCategoryId));
+    
+            // Establecer 'editingProduct' incluyendo 'parentCategory'
+            setEditingProduct({
+                ...data.product,
+                parentCategory: parentCategoryId,
+                category_id: subCategoryId,
+            });
+    
+            // Establecer valores del formulario
             form.setFieldsValue({
                 name: data.product.name,
                 description: data.product.description,
                 price: data.product.price,
                 type: data.product.type,
-                category_id: categories.find(cat => cat.name === subCategory)?.category_id,
+                category_id: subCategoryId,
                 supplier_id: data.product.supplier_id,
                 status: data.product.status,
-                parentCategory: categories.find(cat => cat.name === parentCategory)?.category_id,
+                parentCategory: parentCategoryId,
             });
-
+    
             // Configurar la imagen actual para su previsualización
             setFile(data.product.image ? [{
                 uid: '-1',
@@ -99,15 +111,17 @@ const ProductPage = () => {
                 status: 'done',
                 url: `https://washinton.store/${data.product.image}`,
             }] : []);
+            setRemoveImage(false); // Resetear removeImage al editar
             setIsModalVisible(true);
         } catch (error) {
             notification.error({ message: error.message || 'Error fetching product with categories' });
         }
     };
+    
+    
 
-    const handleUploadChange = ({ fileList }) => {
-        setFile(fileList.slice(-1)); // Mantén solo el último archivo seleccionado para evitar duplicados
-    };
+
+    
     
     
 
@@ -120,63 +134,131 @@ const ProductPage = () => {
             notification.error({ message: error.message || 'Error deleting product' });
         }
     };
+    const handleFileChange = ({ fileList }) => {
+        // Limitar el fileList a un solo archivo
+        const newFileList = fileList.slice(-1);
+        setFile(newFileList);
+    
+        if (newFileList.length === 0) {
+            setRemoveImage(true); // Indicar que se ha eliminado la imagen
+        } else {
+            setRemoveImage(false); // Indicar que hay una nueva imagen o no se ha eliminado
+        }
+    };
+    
+    
+    
+    
+    
 
+    const handlePreview = async (file) => {
+        let src = file.url;
+        if (!src) {
+            src = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file.originFileObj);
+                reader.onload = () => resolve(reader.result);
+            });
+        }
+        const image = new Image();
+        image.src = src;
+        const imgWindow = window.open(src);
+        imgWindow.document.write(image.outerHTML);
+    };
+    
     const handleOk = async () => {
         try {
             const values = await form.validateFields();
-            const jsonPayload = {};
     
-            Object.keys(values).forEach(key => {
-                if (key !== 'sku' && (!editingProduct || editingProduct[key] !== values[key])) {
-                    jsonPayload[key] = values[key];
-                }
-            });
+            let config;
+            let bodyData;
     
-            let body;
-            let headers = {};
+            // Excluir 'parentCategory' de los valores
+            const { parentCategory, ...filteredValues } = values;
     
-            // Usar FormData si hay un archivo para enviar
-            if (file && file.length > 0 && file[0].originFileObj) {
+            // Determinar si se necesita enviar FormData o JSON
+            if (file.length > 0 && file[0].originFileObj) {
+                // Si hay una nueva imagen, usar FormData
                 const formData = new FormData();
-                Object.keys(jsonPayload).forEach(key => formData.append(key, jsonPayload[key]));
+                Object.keys(filteredValues).forEach((key) => {
+                    formData.append(key, filteredValues[key]);
+                });
                 formData.append('image', file[0].originFileObj);
-                body = formData;
+    
+                // Para depuración, mostrar el contenido de FormData
+                console.log('Contenido de FormData:');
+                for (let [key, value] of formData.entries()) {
+                    if (value instanceof File) {
+                        console.log(`${key}: [File] ${value.name}`);
+                    } else {
+                        console.log(`${key}: ${value}`);
+                    }
+                }
+    
+                config = {
+                    method: editingProduct ? 'PATCH' : 'POST',
+                    body: formData,
+                };
             } else {
-                // Si no hay archivo, enviamos JSON
-                body = JSON.stringify(jsonPayload);
-                headers = { 'Content-Type': 'application/json' };
+                // Si no hay nueva imagen
+                Object.keys(filteredValues).forEach((key) => {
+                    filteredValues[key] = filteredValues[key] === undefined ? '' : filteredValues[key];
+                });
+    
+                // Si se ha eliminado la imagen, incluir 'image' como cadena vacía
+                if (removeImage) {
+                    filteredValues.image = '';
+                }
+    
+                bodyData = JSON.stringify(filteredValues);
+    
+                config = {
+                    method: editingProduct ? 'PATCH' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: bodyData,
+                };
             }
     
-            // Verificar la URL
             const url = editingProduct
                 ? `${API_URL_PRODUCTS}${editingProduct.product_id}/`
                 : API_URL_PRODUCTS;
     
-            console.log("Datos para JSON (Postman):", JSON.stringify(jsonPayload, null, 2));
-            console.log("URL de actualización o creación:", url);
-    
-            const options = {
-                method: editingProduct ? 'PATCH' : 'POST',
-                headers,
-                body,
-            };
-    
-            const response = await fetch(url, options);
+            // Enviar la solicitud al backend
+            const response = await fetch(url, config);
     
             if (response.ok) {
-                notification.success({ message: editingProduct ? 'Product updated successfully' : 'Product created successfully' });
+                notification.success({
+                    message: editingProduct
+                        ? 'Product updated successfully'
+                        : 'Product created successfully',
+                });
                 fetchProducts();
                 setIsModalVisible(false);
             } else {
                 const errorData = await response.json();
-                console.error("Error en la respuesta del servidor:", errorData);
+                console.error('Error en la respuesta del servidor:', errorData);
                 throw new Error('Error saving product');
             }
         } catch (error) {
-            console.error("Fetch error:", error);
+            console.error('Fetch error:', error);
             notification.error({ message: error.message || 'Error saving product' });
         }
     };
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
 
@@ -317,24 +399,25 @@ const ProductPage = () => {
         </Form.Item>
         <Form.Item label="Image">
     <Upload
-        listType={file.length > 0 ? 'picture-card' : 'text'}
+        listType="picture"
         fileList={file}
-        onChange={handleUploadChange}
-        beforeUpload={(selectedFile) => {
-            setFile([{
-                uid: '-1',
-                name: selectedFile.name,
-                status: 'done',
-                url: URL.createObjectURL(selectedFile),
-                originFileObj: selectedFile,
-            }]);
-            return false; // Prevenir el autoupload
-        }}
-        onRemove={() => setFile([])} // Asegúrate de que el archivo se elimine al removerlo
+        beforeUpload={() => false} // Evita la carga automática
+        onChange={handleFileChange}
+        onPreview={handlePreview}
+        accept="image/*"
+        maxCount={1} // Limitar a un solo archivo
     >
-        {file.length === 0 && <Button icon={<UploadOutlined />}>Select Image</Button>}
+        {file.length < 1 && (
+            <Button icon={<UploadOutlined />}>Upload Image</Button>
+        )}
     </Upload>
 </Form.Item>
+
+
+
+
+
+
 
 
         <Form.Item name="status" label="Status" rules={[{ required: true }]}>
