@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Modal, Form, Input, notification, Button, Space, Tooltip, Tag, Image } from 'antd';
-import { API_URL_PRODUCTS, API_URL_CATEGORIES } from '../../services/api';
+import { API_URL_PRODUCTS, API_URL_CATEGORIES } from '../../services/ApisConfig';
 import { EditOutlined, DeleteOutlined, DollarOutlined } from '@ant-design/icons';
 import Navbar from '../../components/Navbar';
 
