@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, Modal, Button, notification, Tag, Image, Select, Checkbox } from 'antd';
 import { BarcodeOutlined, QrcodeOutlined } from '@ant-design/icons';
 import { QRCodeCanvas } from 'qrcode.react';
-import { API_URL_PRODUCT_BATCH, API_URL_BATCH } from '../../services/ApisConfig';
+import { API_URL_PRODUCT_BATCH, API_URL_BATCH, API_URL_BATCH_UPDATE_STATUS, API_URL_BATCH_BULK_UPDATE_STATUS } from '../../services/ApisConfig';
 import Navbar from '../../components/Navbar';
 
 const { Option } = Select;
@@ -30,7 +30,11 @@ const ProductBatchPage = () => {
             const response = await fetch(API_URL_BATCH);
             if (!response.ok) throw new Error('Error fetching batches');
             const data = await response.json();
-            setBatches(data);
+            if (Array.isArray(data)) {
+                setBatches(data);
+            } else {
+                throw new Error('Invalid data format');
+            }
         } catch (error) {
             notification.error({ message: error.message || 'Error fetching batches' });
         }
@@ -70,8 +74,8 @@ const ProductBatchPage = () => {
     const handleStatusChange = async (batchId, newStatus) => {
         setUpdatingStatus(true);
         try {
-            const response = await fetch(`${API_URL_BATCH}/${batchId}`, {
-                method: 'PUT',
+            const response = await fetch(`${API_URL_BATCH_UPDATE_STATUS}${batchId}`, {
+                method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -91,22 +95,27 @@ const ProductBatchPage = () => {
     const handleBulkStatusChange = async () => {
         setUpdatingStatus(true);
         try {
-            const response = await fetch(`${API_URL_BATCH}/bulk-update`, {
+            const response = await fetch(`${API_URL_BATCH_BULK_UPDATE_STATUS}bulk_update`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ batchIds: selectedBatchIds, status: bulkStatus }),
+                body: JSON.stringify({
+                    batches: selectedBatchIds.map(batchId => ({
+                        batch_id: batchId,
+                        status: bulkStatus
+                    }))
+                }),
             });
             if (!response.ok) throw new Error('Error updating status');
             const updatedBatches = await response.json();
-            setBatches(batches.map(batch => selectedBatchIds.includes(batch.batch_id) ? updatedBatches.find(updatedBatch => updatedBatch.batch_id === batch.batch_id) : batch));
+            setBatches(updatedBatches);
             notification.success({ message: 'Statuses updated successfully' });
-            setSelectedBatchIds([]);
         } catch (error) {
             notification.error({ message: error.message || 'Error updating statuses' });
         } finally {
             setUpdatingStatus(false);
+            fetchBatches();
         }
     };
 
@@ -152,7 +161,6 @@ const ProductBatchPage = () => {
                     onChange={(value) => handleStatusChange(record.batch_id, value)}
                     loading={updatingStatus}
                 >
-                    <Option value="active">Active</Option>
                     <Option value="pending">Pending</Option>
                     <Option value="in_process">In Process</Option>
                     <Option value="received">Received</Option>
@@ -236,7 +244,6 @@ const ProductBatchPage = () => {
                     placeholder="Select status to update"
                     style={{ width: 200, marginRight: 8 }}
                 >
-                    <Option value="active">Active</Option>
                     <Option value="pending">Pending</Option>
                     <Option value="in_process">In Process</Option>
                     <Option value="received">Received</Option>
@@ -252,7 +259,7 @@ const ProductBatchPage = () => {
                 </Button>
             </div>
             <Table
-                dataSource={batches}
+                dataSource={Array.isArray(batches) ? batches : []}
                 columns={columns}
                 rowKey="batch_id"
                 pagination={{
