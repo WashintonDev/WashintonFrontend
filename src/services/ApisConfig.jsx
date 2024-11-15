@@ -13,3 +13,5 @@ export const API_URL_INVENTORIES = BASE_API_URL + 'inventory/';
 export const API_URL_PRODUCT_BATCH = BASE_API_URL + 'product_batch/';
 export const API_URL_BATCH = BASE_API_URL + 'batch/';
 export const API_URL_STORE_LABELS = BASE_API_URL_TESTING + 'stores/labels';
+export const API_URL_BATCH_UPDATE_STATUS = API_URL_BATCH + 'update-status/';
+export const API_URL_BATCH_BULK_UPDATE_STATUS = BASE_API_URL + 'batches/'
