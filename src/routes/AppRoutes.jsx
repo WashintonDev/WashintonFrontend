@@ -7,6 +7,7 @@ import Login from '../pages/Login/Login';
 import SignUp from '../pages/login/Sign-up';
 import Inventory from '../pages/Inventory/Inventory';
 import Sales from '../pages/Sales/Sales';
+import TransferOrders from '../pages/TransferOrders/TransferOrders'
 
 const AppRoutes = () => (
   <Router>
@@ -18,6 +19,7 @@ const AppRoutes = () => (
       <Route path="/suppliers/*" element={<Suppliers />} />
       <Route path="/inventory/*" element={<Inventory />} />
       <Route path="/sales/*" element={<Sales />} />
+      <Route path="/transfer-orders/*" element={<TransferOrders/>}/>
       </Route>
     </Routes>
   </Router>
