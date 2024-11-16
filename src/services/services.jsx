@@ -50,4 +50,3 @@ export const putData = async (endpoint, data) => {
     throw error;
   }
 };
-y
