@@ -6,6 +6,30 @@ import Navbar from '../../components/Navbar';
 
 const { Option } = Select;
 
+const unitOptions = [
+    { label: 'Litros', value: 'L' },
+    { label: 'Mililitros', value: 'mL' },
+    { label: 'Kilogramos', value: 'kg' },
+    { label: 'Gramos', value: 'g' },
+    { label: 'Miligramos', value: 'mg' },
+];
+
+const typeOptions = [
+    'Aerosol',
+    'Líquido',
+    'Barra',
+    'Polvo',
+    'Gel',
+    'Pasta',
+    'Spray',
+    'Tableta',
+    'Granulado',
+    'Espuma',
+    'Accesorio',
+    'Herramienta',
+    'Otro',
+];
+
 const ProductPage = () => {
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -74,52 +98,47 @@ const ProductPage = () => {
             const response = await fetch(`${API_URL_PRODUCTS}sku/${product.sku}`);
             if (!response.ok) throw new Error('Error fetching product with categories');
             const data = await response.json();
-    
+
             const subCategory = data.sub_category_name;
             const parentCategory = data.parent_category_name;
-    
-            // Obtener IDs de categoría
+
             const parentCategoryId = categories.find(cat => cat.name === parentCategory)?.category_id;
             const subCategoryId = categories.find(cat => cat.name === subCategory)?.category_id;
-    
-            // Actualizar subcategorías disponibles
+
             setSubCategories(categories.filter(cat => cat.parent_id === parentCategoryId));
-    
-            // Establecer 'editingProduct' incluyendo 'parentCategory'
+
             setEditingProduct({
                 ...data.product,
                 parentCategory: parentCategoryId,
                 category_id: subCategoryId,
             });
-    
-            // Establecer valores del formulario
+
             form.setFieldsValue({
                 name: data.product.name,
                 description: data.product.description,
                 price: data.product.price,
                 type: data.product.type,
+                brand: data.product.brand,
+                volume: data.product.volume,
+                unit: data.product.unit,
                 category_id: subCategoryId,
                 supplier_id: data.product.supplier_id,
                 status: data.product.status,
                 parentCategory: parentCategoryId,
             });
-    
-            // Configurar la imagen actual para su previsualización
+
             setFile(data.product.image ? [{
                 uid: '-1',
                 name: 'image.png',
                 status: 'done',
                 url: `https://washinton.store/${data.product.image}`,
             }] : []);
-            setRemoveImage(false); // Resetear removeImage al editar
+            setRemoveImage(false);
             setIsModalVisible(true);
         } catch (error) {
             notification.error({ message: error.message || 'Error fetching product with categories' });
         }
     };
-    
-    
-
 
     
     
@@ -174,43 +193,48 @@ const ProductPage = () => {
             let bodyData;
     
             // Excluir 'parentCategory' de los valores
-            const { parentCategory, ...filteredValues } = values;
+            const { parentCategory, volume, unit, ...filteredValues } = values;
+    
+            // Convertir volumen a número o null
+            filteredValues.volume = volume !== undefined && volume !== '' ? parseFloat(volume) : null;
+    
+            // Si unit no está definido, enviarlo como null
+            filteredValues.unit = unit || null;
+    
+            // Convertir precio a número
+            if (filteredValues.price) {
+                filteredValues.price = parseFloat(filteredValues.price);
+            }
     
             // Determinar si se necesita enviar FormData o JSON
             if (file.length > 0 && file[0].originFileObj) {
-                // Si hay una nueva imagen, usar FormData
                 const formData = new FormData();
                 Object.keys(filteredValues).forEach((key) => {
-                    formData.append(key, filteredValues[key]);
+                    // Evita agregar valores null al FormData
+                    if (filteredValues[key] !== null) {
+                        formData.append(key, filteredValues[key]);
+                    } else {
+                        formData.append(key, ''); // Envía cadena vacía para valores null
+                    }
                 });
                 formData.append('image', file[0].originFileObj);
     
-                // Para depuración, mostrar el contenido de FormData
-                console.log('Contenido de FormData:');
-                for (let [key, value] of formData.entries()) {
-                    if (value instanceof File) {
-                        console.log(`${key}: [File] ${value.name}`);
-                    } else {
-                        console.log(`${key}: ${value}`);
-                    }
-                }
+                // Mostrar FormData como JSON para depuración
+                console.log('Enviando FormData:', Object.fromEntries(formData.entries()));
     
                 config = {
                     method: editingProduct ? 'PATCH' : 'POST',
                     body: formData,
                 };
             } else {
-                // Si no hay nueva imagen
-                Object.keys(filteredValues).forEach((key) => {
-                    filteredValues[key] = filteredValues[key] === undefined ? '' : filteredValues[key];
-                });
-    
-                // Si se ha eliminado la imagen, incluir 'image' como cadena vacía
                 if (removeImage) {
                     filteredValues.image = '';
                 }
     
                 bodyData = JSON.stringify(filteredValues);
+    
+                // Mostrar JSON en la consola
+                console.log('Enviando JSON:', bodyData);
     
                 config = {
                     method: editingProduct ? 'PATCH' : 'POST',
@@ -225,7 +249,6 @@ const ProductPage = () => {
                 ? `${API_URL_PRODUCTS}${editingProduct.product_id}/`
                 : API_URL_PRODUCTS;
     
-            // Enviar la solicitud al backend
             const response = await fetch(url, config);
     
             if (response.ok) {
@@ -249,14 +272,7 @@ const ProductPage = () => {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
+
     
     
     
@@ -283,16 +299,35 @@ const ProductPage = () => {
             dataIndex: 'name',
             key: 'name',
             ellipsis: true,
-            width: 400,
+            width: 300,
+        },
+        {
+            title: 'Brand',
+            dataIndex: 'brand',
+            key: 'brand',
+            ellipsis: true,
+            render: (text) => <Tag color="geekblue">{text}</Tag>,
+            width: 150,
+        },
+        {
+            title: 'Quantity',
+            key: 'quantity',
+            render: (text, record) => {
+                const { volume, unit } = record;
+                return volume && unit ? (
+                    <Tag color="volcano">{`${volume}${unit}`}</Tag>
+                ) : (
+                    <Tag color="default">N/A</Tag>
+                );
+            },
+            width: 150,
         },
         {
             title: 'SKU',
             dataIndex: 'sku',
             key: 'sku',
             ellipsis: true,
-            render: (text, record) => (
-                <Tag color="orange">{record.sku}</Tag>
-            ),
+            render: (text, record) => <Tag color="orange">{record.sku}</Tag>,
             width: 130,
         },
         {
@@ -310,7 +345,7 @@ const ProductPage = () => {
             title: 'Category',
             key: 'category',
             render: (text, record) => {
-                const category = categories.find(cat => cat.category_id === record.category_id);
+                const category = categories.find((cat) => cat.category_id === record.category_id);
                 return <Tag color="purple">{category ? category.name : 'Unknown Category'}</Tag>;
             },
             width: 200,
@@ -319,9 +354,7 @@ const ProductPage = () => {
             title: 'Type',
             dataIndex: 'type',
             key: 'type',
-            render: (text, record) => (
-                <Tag color="blue">{record.type}</Tag>
-            ),
+            render: (text) => <Tag color="blue">{text}</Tag>,
             width: 200,
         },
         {
@@ -333,9 +366,11 @@ const ProductPage = () => {
                     width={50}
                     height={50}
                     src={record.image ? `https://washinton.store/${record.image}` : 'https://via.placeholder.com/50'}
-                    preview={{ 
-                        src: record.image ? `https://washinton.store/${record.image}` : 'https://via.placeholder.com/800', 
-                        title: record.name 
+                    preview={{
+                        src: record.image
+                            ? `https://washinton.store/${record.image}`
+                            : 'https://via.placeholder.com/800',
+                        title: record.name,
                     }}
                     style={{
                         cursor: 'pointer',
@@ -361,6 +396,7 @@ const ProductPage = () => {
             width: 120,
         },
     ];
+    
 
     return (
         <div>
@@ -378,86 +414,100 @@ const ProductPage = () => {
                     onChange: (page, pageSize) => setPagination({ current: page, pageSize }),
                 }}
             />
-<Modal
-    title={editingProduct ? 'Edit Product' : 'Add Product'}
-    visible={isModalVisible}
-    onOk={handleOk}
-    onCancel={handleCancel}
->
-    <Form form={form} layout="vertical">
-        <Form.Item name="name" label="Name" rules={[{ required: true }]}>
-            <Input />
-        </Form.Item>
-        <Form.Item name="description" label="Description">
-            <Input.TextArea />
-        </Form.Item>
-        <Form.Item name="price" label="Price" rules={[{ required: true }]}>
-            <Input />
-        </Form.Item>
-        <Form.Item name="type" label="Type" rules={[{ required: true }]}>
-            <Input />
-        </Form.Item>
-        <Form.Item label="Image">
-    <Upload
-        listType="picture"
-        fileList={file}
-        beforeUpload={() => false} // Evita la carga automática
-        onChange={handleFileChange}
-        onPreview={handlePreview}
-        accept="image/*"
-        maxCount={1} // Limitar a un solo archivo
-    >
-        {file.length < 1 && (
-            <Button icon={<UploadOutlined />}>Upload Image</Button>
-        )}
-    </Upload>
+            <Modal
+                title={editingProduct ? 'Edit Product' : 'Add Product'}
+                visible={isModalVisible}
+                onOk={handleOk}
+                onCancel={handleCancel}
+            >
+                <Form form={form} layout="vertical">
+                    <Form.Item name="name" label="Name" rules={[{ required: true }]}>
+                        <Input />
+                    </Form.Item>
+                    <Form.Item name="description" label="Description">
+                        <Input.TextArea />
+                    </Form.Item>
+                    <Form.Item name="price" label="Price" rules={[{ required: true }]}>
+                        <Input type="number" min={0} step={0.01} />
+                    </Form.Item>
+                    <Form.Item name="brand" label="Brand" rules={[{ required: true }]}>
+                        <Input />
+                    </Form.Item>
+                    <Form.Item name="volume" label="Volume">
+    <Input type="number" min={0} step={0.01} placeholder="Enter volume or leave empty" />
+</Form.Item>
+<Form.Item name="unit" label="Unit">
+    <Select placeholder="Select a unit or leave empty">
+        {unitOptions.map(option => (
+            <Option key={option.value} value={option.value}>
+                {option.label}
+            </Option>
+        ))}
+    </Select>
 </Form.Item>
 
-
-
-
-
-
-
-
-        <Form.Item name="status" label="Status" rules={[{ required: true }]}>
-            <Select>
-                <Option value="active">Active</Option>
-                <Option value="inactive">Inactive</Option>
-            </Select>
-        </Form.Item>
-        <Form.Item label="Category" name="parentCategory" rules={[{ required: true, message: 'Please select a category' }]}>
-            <Select placeholder="Select parent category" onChange={handleParentCategoryChange}>
-                {parentCategories.map(category => (
-                    <Option key={category.category_id} value={category.category_id}>
-                        {category.name}
-                    </Option>
-                ))}
-            </Select>
-        </Form.Item>
-        <Form.Item name="category_id" label="Subcategory" rules={[{ required: true, message: 'Please select a subcategory' }]}>
-            <Select placeholder="Select subcategory">
-                {subCategories.map(subCategory => (
-                    <Option key={subCategory.category_id} value={subCategory.category_id}>
-                        {subCategory.name}
-                    </Option>
-                ))}
-            </Select>
-        </Form.Item>
-        <Form.Item name="supplier_id" label="Supplier" rules={[{ required: true }]}>
-            <Select showSearch placeholder="Select a supplier">
-                {suppliers.map(supplier => (
-                    <Option key={supplier.supplier_id} value={supplier.supplier_id}>
-                        {supplier.name}
-                    </Option>
-                ))}
-            </Select>
-        </Form.Item>
-    </Form>
-</Modal>
-
+                    <Form.Item name="type" label="Type" rules={[{ required: true }]}>
+                        <Select placeholder="Select a type">
+                            {typeOptions.map(type => (
+                                <Option key={type} value={type}>
+                                    {type}
+                                </Option>
+                            ))}
+                        </Select>
+                    </Form.Item>
+                    <Form.Item label="Image">
+                        <Upload
+                            listType="picture"
+                            fileList={file}
+                            beforeUpload={() => false} // Evita la carga automática
+                            onChange={handleFileChange}
+                            onPreview={handlePreview}
+                            accept="image/*"
+                            maxCount={1} // Limitar a un solo archivo
+                        >
+                            {file.length < 1 && (
+                                <Button icon={<UploadOutlined />}>Upload Image</Button>
+                            )}
+                        </Upload>
+                    </Form.Item>
+                    <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+                        <Select>
+                            <Option value="active">Active</Option>
+                            <Option value="inactive">Inactive</Option>
+                        </Select>
+                    </Form.Item>
+                    <Form.Item label="Category" name="parentCategory" rules={[{ required: true, message: 'Please select a category' }]}>
+                        <Select placeholder="Select parent category" onChange={handleParentCategoryChange}>
+                            {parentCategories.map(category => (
+                                <Option key={category.category_id} value={category.category_id}>
+                                    {category.name}
+                                </Option>
+                            ))}
+                        </Select>
+                    </Form.Item>
+                    <Form.Item name="category_id" label="Subcategory" rules={[{ required: true, message: 'Please select a subcategory' }]}>
+                        <Select placeholder="Select subcategory">
+                            {subCategories.map(subCategory => (
+                                <Option key={subCategory.category_id} value={subCategory.category_id}>
+                                    {subCategory.name}
+                                </Option>
+                            ))}
+                        </Select>
+                    </Form.Item>
+                    <Form.Item name="supplier_id" label="Supplier" rules={[{ required: true }]}>
+                        <Select showSearch placeholder="Select a supplier">
+                            {suppliers.map(supplier => (
+                                <Option key={supplier.supplier_id} value={supplier.supplier_id}>
+                                    {supplier.name}
+                                </Option>
+                            ))}
+                        </Select>
+                    </Form.Item>
+                </Form>
+            </Modal>
         </div>
     );
+    
     
     
 };
