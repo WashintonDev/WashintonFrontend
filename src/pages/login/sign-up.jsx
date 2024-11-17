@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
-import { Form, Input, Button, Typography, Divider, Space, message, notification, Select } from "antd";
+import { Form, Input, Button, Typography, message, notification, Select } from "antd";
 import { MailOutlined, LockOutlined, UserOutlined, PhoneOutlined, ShopOutlined } from "@ant-design/icons";
 import { auth } from "../../services/firebaseConfig";
 import axios from "axios";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import "../../assets/styles/login.css";
-// import { API_URL_USERS } from "../../services/ApisConfig"; 
+import { useNavigate } from "react-router-dom";
+import { API_URL_USERS } from "../../services/ApisConfig"; 
 
 const { Title, Text, Link } = Typography;
 const { Option } = Select;
 
 const SignUp = () => {
+  const Navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState([]);
 
@@ -28,10 +30,8 @@ const SignUp = () => {
       console.log(firebase_user_ID);
       
       await registerUser({ first_name, last_name,password, email, phone, role, firebase_user_ID });
-      
-      
       message.success("User registered successfully");
-      localStorage.setItem("user", email);
+      Navigate('/')
     } catch (error) {
       message.error("Error registering user: " + error.message);
     } finally {
@@ -41,11 +41,9 @@ const SignUp = () => {
 
   const fetchData = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/user`); /// cambiaar por la url de la api
+      const response = await fetch(`${API_URL_USERS}`); /// cambiaar por la url de la api
       if (!response.ok) throw new Error("Error fetching users");
       const data = await response.json();
-
-      // Extraer roles únicos para el selector
       const uniqueRoles = Array.from(new Set(data.map((user) => user.role)));
       setRoles(uniqueRoles);
       console.log(data);
@@ -60,7 +58,7 @@ const SignUp = () => {
       const location_type = role === "admin" ? "warehouse" : "store";  // Si es admin, location_type es warehouse
   
       // Realiza la llamada POST al backend
-      const response = await axios.post(`http://127.0.0.1:8000/api/user`, { // Cambiar por la url de la api 
+      const response = await axios.post(`${API_URL_USERS}`, { // Cambiar por la url de la api 
         first_name,
         last_name,
         email,
@@ -152,11 +150,6 @@ const SignUp = () => {
             </Button>
           </Form.Item>
         </Form>
-
-        <Divider>Login</Divider>
-        <Space>
-          <Link href="/Login">Sign In</Link>
-        </Space>
       </div>
 
       <Text type="secondary" className="login-footer">

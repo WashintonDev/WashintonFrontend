@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import  { useState } from 'react';
 import NavBarHome from '../../components/NavBarHome';
 import '../../assets/styles/login.css';
 
 const Home = () => {
     const [collapsed, setCollapsed] = useState(true);
+  
 
     return (
         <div>

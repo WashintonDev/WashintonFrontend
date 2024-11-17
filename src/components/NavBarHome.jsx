@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Dropdown, Menu, Button, Input, Badge, Layout } from 'antd';
+import  { useState } from 'react';
+import { Dropdown, Menu, Button, Layout } from 'antd';
 import {
     UserOutlined, LogoutOutlined, FundProjectionScreenOutlined, SolutionOutlined,
     FormOutlined, ShoppingOutlined, MenuFoldOutlined, ExclamationCircleOutlined,
@@ -15,6 +15,7 @@ const { Sider } = Layout;
 const NavBarHome = ({ onSearch, showSearch = true }) => {
     const [collapsed, setCollapsed] = useState(true); 
     const navigate = useNavigate();
+  
 
     // Función de logout
     const handleLogout = async () => {
@@ -122,17 +123,15 @@ const NavBarHome = ({ onSearch, showSearch = true }) => {
             </Sider>
 
             <Layout>
-                <div style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', backgroundColor: '#f8fafc', borderBottom: '1px solid #ddd' }}>
-                    <Button icon={<MenuFoldOutlined />} shape="square" onClick={() => setCollapsed(!collapsed)} />
+            <div style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', backgroundColor: '#f8fafc', borderBottom: '1px solid #ddd' }}>
+                <Button icon={<MenuFoldOutlined />} shape="square" onClick={() => setCollapsed(!collapsed)} />
 
-                    {showSearch && <Input.Search placeholder="Search" style={{ marginLeft: '100px' }} />}
-
-                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
-                        <Dropdown overlay={settingsMenu} placement="bottomLeft" trigger={['click']}>
-                            <Button icon={<UserOutlined />} shape="circle" style={{ marginLeft: '10px' }} />
-                        </Dropdown>
-                    </div>
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+                    <Dropdown overlay={settingsMenu} placement="bottomRight" trigger={['click']}>
+                        <Button icon={<UserOutlined />} shape="circle" />
+                    </Dropdown>
                 </div>
+            </div>
             </Layout>
         </Layout>
     );

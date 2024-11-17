@@ -4,7 +4,7 @@ import ProtectedRoute from '../components/protectedRoutes';
 import Home from '../pages/Home/Home';
 import Suppliers from '../pages/Suppliers/Suppliers';
 import Login from '../pages/Login/Login';
-import SignUp from '../pages/login/Sign-up';
+import SignUp from '../pages/login/sign-up';
 import Inventory from '../pages/Inventory/Inventory';
 import Sales from '../pages/Sales/Sales';
 import TransferOrders from '../pages/TransferOrders/TransferOrders'
@@ -12,9 +12,10 @@ import TransferOrders from '../pages/TransferOrders/TransferOrders'
 const AppRoutes = () => (
   <Router>
     <Routes>
-      <Route path="/sign-up" element={<SignUp />} />
+      
       <Route path="/login" element={<Login />} />
       <Route element={<ProtectedRoute />}>
+      <Route path="/sign-up" element={<SignUp />} />
       <Route path="/" element={<Home />} />
       <Route path="/suppliers/*" element={<Suppliers />} />
       <Route path="/inventory/*" element={<Inventory />} />
