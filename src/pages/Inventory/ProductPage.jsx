@@ -131,7 +131,7 @@ const ProductPage = () => {
                 uid: '-1',
                 name: 'image.png',
                 status: 'done',
-                url: `https://washinton.store/${data.product.image}`,
+                url: `https://washintonbackend.store/${data.product.image}`,
             }] : []);
             setRemoveImage(false);
             setIsModalVisible(true);
@@ -365,10 +365,10 @@ const ProductPage = () => {
                 <Image
                     width={50}
                     height={50}
-                    src={record.image ? `https://washinton.store/${record.image}` : 'https://via.placeholder.com/50'}
+                    src={record.image ? `https://washintonbackend.store/${record.image}` : 'https://via.placeholder.com/50'}
                     preview={{
                         src: record.image
-                            ? `https://washinton.store/${record.image}`
+                            ? `https://washintonbackend.store/${record.image}`
                             : 'https://via.placeholder.com/800',
                         title: record.name,
                     }}
