@@ -8,18 +8,19 @@ import SignUp from '../pages/login/Sign-up';
 import Inventory from '../pages/Inventory/Inventory';
 import Sales from '../pages/Sales/Sales';
 import TransferOrders from '../pages/TransferOrders/TransferOrders'
-
+import Dispatch from '../pages/Dispatch/dispatch';
 const AppRoutes = () => (
   <Router>
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route element={<ProtectedRoute />}>
-      <Route path="/" element={<Home />} />
-      <Route path="/suppliers/*" element={<Suppliers />} />
-      <Route path="/inventory/*" element={<Inventory />} />
-      <Route path="/sign-up" element={<SignUp />} />
-      <Route path="/sales/*" element={<Sales />} />
-      <Route path="/transfer-orders/*" element={<TransferOrders/>}/>
+        <Route path="/" element={<Home />} />
+        <Route path="/suppliers/*" element={<Suppliers />} />
+        <Route path="/inventory/*" element={<Inventory />} />
+        <Route path="/sign-up" element={<SignUp />} />
+        <Route path="/sales/*" element={<Sales />} />
+        <Route path="/dispatch/*" element={<Dispatch />} />
+        <Route path="/transfer-orders/*" element={<TransferOrders />} />
       </Route>
     </Routes>
   </Router>
