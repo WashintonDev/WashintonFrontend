@@ -134,6 +134,7 @@ const ProductBatchPage = () => {
                             setSelectedBatchIds(selectedBatchIds.filter(id => id !== record.batch_id));
                         }
                     }}
+                    disabled={record.status === 'received' || record.status === 'cancelled'}
                 />
             ),
             width: 50,
@@ -160,6 +161,7 @@ const ProductBatchPage = () => {
                     value={text}
                     onChange={(value) => handleStatusChange(record.batch_id, value)}
                     loading={updatingStatus}
+                    disabled={text === 'received' || text === 'cancelled'}
                 >
                     <Option value="pending">Pending</Option>
                     <Option value="in_process">In Process</Option>
