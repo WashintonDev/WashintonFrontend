@@ -1,13 +1,16 @@
 import { Navigate, Outlet } from "react-router-dom";
+import { getToken } from "../services/authUtil";
 
 const ProtectedRoute = () => {
-  const userToken = localStorage.getItem("user"); // Verifica que el token esté almacenado y sea el nombre correcto
+  const userRole = localStorage.getItem("token"); // Verifica que el token 
+  const userToken = getToken()
 
-  if (!userToken) {
-    return <Navigate to="/login" replace />; // Redirige al login si no hay token
+
+  if (!userToken || !userRole) {
+    return <Navigate to="/login" replace />; 
   }
 
-  return <Outlet />; // Si hay token, muestra la ruta protegida
+  return <Outlet />; 
 };
 
 export default ProtectedRoute;

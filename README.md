@@ -5,7 +5,7 @@ Este es un proyecto de aplicación desarrollado con React y Vite. A continuació
 ## Estructura del Proyecto
 
 ### `public`
-
+ 
 Esta carpeta es para todos esos archivos que no necesitan ser procesados por Vite. Aquí puedes poner imágenes, íconos y tu archivo `index.html`. Todo lo que pongas aquí se servirá tal cual al navegador.
 
 ### `src`

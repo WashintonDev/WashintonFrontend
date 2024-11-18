@@ -1,12 +1,8 @@
 import  { useState } from 'react';
 import { Dropdown, Menu, Button, Layout } from 'antd';
-import {
-    UserOutlined, LogoutOutlined, FundProjectionScreenOutlined, SolutionOutlined,
-    FormOutlined, ShoppingOutlined, MenuFoldOutlined, ExclamationCircleOutlined,
-    TruckOutlined, FundOutlined
+import { UserOutlined, LogoutOutlined, FundProjectionScreenOutlined, SolutionOutlined, FormOutlined, ShoppingOutlined, MenuFoldOutlined, ExclamationCircleOutlined, TruckOutlined, FundOutlined
 } from '@ant-design/icons';
-import { signOut } from "firebase/auth";
-import { auth } from '../services/firebaseConfig';
+import useLogout from '../hooks/logout';
 import { Link, useNavigate } from "react-router-dom";
 import "../assets/styles/login.css";
 
@@ -15,23 +11,11 @@ const { Sider } = Layout;
 const NavBarHome = ({ onSearch, showSearch = true }) => {
     const [collapsed, setCollapsed] = useState(true); 
     const navigate = useNavigate();
+    const logout = useLogout();
   
-
-    // Función de logout
-    const handleLogout = async () => {
-        try {
-            await signOut(auth);
-            localStorage.removeItem("user");
-            navigate('/login');
-        } catch (error) {
-            console.error('Error logging out', error);
-        }
-    };
-
-    // Menú de configuración
     const settingsMenu = (
         <Menu>
-            <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
+            <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={logout}>
                 Log Out
             </Menu.Item>
         </Menu>

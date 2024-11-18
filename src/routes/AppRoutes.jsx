@@ -9,6 +9,7 @@ import Inventory from '../pages/Inventory/Inventory';
 import Sales from '../pages/Sales/Sales';
 import TransferOrders from '../pages/TransferOrders/TransferOrders'
 
+
 const AppRoutes = () => (
   <Router>
     <Routes>
