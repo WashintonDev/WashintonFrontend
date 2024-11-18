@@ -121,7 +121,7 @@ const ProductBatchPage = () => {
 
     const columns = [
         {
-            title: <Checkbox onChange={(e) => setSelectedBatchIds(e.target.checked ? batches.map(batch => batch.batch_id) : [])} />,
+            title: <Checkbox onChange={(e) => setSelectedBatchIds(e.target.checked ? batches.filter(batch => batch.status !== 'received' && batch.status !== 'cancelled').map(batch => batch.batch_id) : [])} />,
             dataIndex: 'select',
             key: 'select',
             render: (_, record) => (
@@ -280,7 +280,7 @@ const ProductBatchPage = () => {
                         <span>Status: {selectedBatchStatus}</span>
                     </span>
                 }
-                visible={productsModalVisible}
+                open={productsModalVisible}
                 onCancel={() => setProductsModalVisible(false)}
                 footer={null}
                 width={800}
@@ -294,7 +294,7 @@ const ProductBatchPage = () => {
 
             <Modal
                 title={`Code: ${showBarcode ? 'Barcode' : 'QR'} - ${selectedBatchName}`}
-                visible={codeModalVisible}
+                opem={codeModalVisible}
                 onCancel={() => setCodeModalVisible(false)}
                 footer={null}
                 width={400}
