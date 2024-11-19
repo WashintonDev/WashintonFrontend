@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Input, notification, Button, Image, Select, Modal } from 'antd';
-import { API_URL_PRODUCTS, API_URL_CATEGORIES, API_URL_BATCH, API_URL_PRODUCT_BATCH } from '../../services/ApisConfig';
+import { API_URL_PRODUCTS, API_URL_CATEGORIES, API_URL_BATCH, API_URL_PRODUCT_BATCH, API_URL_CREATE_BATCH} from '../../services/ApisConfig';
 import { CloseOutlined } from '@ant-design/icons';
 import Navbar from '../../components/Navbar';
 import CardSkeleton from '../../components/CardSkeleton/CardSkeleton';
@@ -109,18 +109,22 @@ const RestockProductsPage = () => {
             notification.error({ message: 'El nombre del lote es obligatorio.' });
             return;
         }
+
+        const formatDateToISO = (date) => {
+            return date.toISOString().split('.')[0];
+        };
     
         const requestBody = {
             batch_name: newBatchName,
             code: generateRandomCode(),
             status: 'pending',
-            requested_at: formatDate(new Date()),
+            requested_at: formatDateToISO(new Date()),
         };
     
         console.log("Enviando a la API:", JSON.stringify(requestBody));
     
         try {
-            const response = await fetch(API_URL_BATCH, {
+            const response = await fetch(API_URL_CREATE_BATCH, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

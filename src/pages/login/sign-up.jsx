@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Form, Input, Button, Typography, message, notification, Select } from "antd";
 import { MailOutlined, LockOutlined, UserOutlined, PhoneOutlined, ShopOutlined } from "@ant-design/icons";
 import { auth } from "../../services/firebaseConfig";
@@ -14,11 +14,6 @@ const { Option } = Select;
 const SignUp = () => {
   const Navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [roles, setRoles] = useState([]);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const onFinish = async (values) => {
     const { first_name, last_name, email, password, phone, role } = values;
@@ -29,9 +24,9 @@ const SignUp = () => {
       const firebase_user_ID = userCredential.user.uid; 
       console.log(firebase_user_ID);
       
-      await registerUser({ first_name, last_name,password, email, phone, role, firebase_user_ID });
+      await registerUser({ first_name, last_name, password, email, phone, role, firebase_user_ID });
       message.success("User registered successfully");
-      Navigate('/')
+      Navigate('/');
     } catch (error) {
       message.error("Error registering user: " + error.message);
     } finally {
@@ -39,26 +34,13 @@ const SignUp = () => {
     }
   };
 
-  const fetchData = async () => {
-    try {
-      const response = await fetch(`${API_URL_USERS}`); /// cambiaar por la url de la api
-      if (!response.ok) throw new Error("Error fetching users");
-      const data = await response.json();
-      const uniqueRoles = Array.from(new Set(data.map((user) => user.role)));
-      setRoles(uniqueRoles);
-      console.log(data);
-    } catch (error) {
-      notification.error({ message: error.message || "Error fetching users" });
-    }
-  };
-
-  const registerUser = async ({ first_name, last_name, email,password, phone, role, firebase_user_ID }) => {
+  const registerUser = async ({ first_name, last_name, email, password, phone, role, firebase_user_ID }) => {
     try {
       const store_id = role === "admin" ? null : "specific_store_id";  // Si es admin, no se asigna store_id
       const location_type = role === "admin" ? "warehouse" : "store";  // Si es admin, location_type es warehouse
   
       // Realiza la llamada POST al backend
-      const response = await axios.post(`${API_URL_USERS}`, { // Cambiar por la url de la api 
+      const response = await axios.post(`${API_URL_USERS}`, {
         first_name,
         last_name,
         email,
@@ -83,7 +65,6 @@ const SignUp = () => {
       }
     }
   };
-  
 
   return (
     <div className="login-container">
@@ -124,7 +105,7 @@ const SignUp = () => {
             <Input.Password prefix={<LockOutlined />} placeholder="Confirm Password" size="large" />
           </Form.Item>
 
-          <Form.Item name="phone" rules={[{ required: true, message: "Please type your phone number" } ,{ len: 10, message: "Phone number must be 10 digits" },
+          <Form.Item name="phone" rules={[{ required: true, message: "Please type your phone number" }, { len: 10, message: "Phone number must be 10 digits" },
               { pattern: /^[0-9]{10}$/, message: "Phone number must be numeric" }
             ]}>
             <Input prefix={<PhoneOutlined />} placeholder="Phone Number" size="large" />
@@ -132,11 +113,8 @@ const SignUp = () => {
 
           <Form.Item name="role" rules={[{ required: true, message: "Please select a role" }]}>
             <Select placeholder="Select a role" size="large">
-              {roles.map((role) => (
-                <Option key={role} value={role}>
-                  {role}
-                </Option>
-              ))}
+              <Option value="admin">Admin</Option>
+              <Option value="store">Store</Option>
             </Select>
           </Form.Item>
 

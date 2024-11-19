@@ -39,7 +39,7 @@ const NavBarHome = ({ onSearch, showSearch = true }) => {
                     expandIcon={null}
                 >
                     <Menu.Item key="dashboard" icon={<FundProjectionScreenOutlined />}>
-                        <Link to="/dashboard">Dashboard</Link>
+                        <Link to="/Admin">Dashboard</Link>
                     </Menu.Item>
 
                     <Menu.Item key="orders" icon={<SolutionOutlined />}>

@@ -9,8 +9,7 @@ const useLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
     localStorage.removeItem("user");  
-
-
+    
     const auth = getAuth();
     signOut(auth);
 

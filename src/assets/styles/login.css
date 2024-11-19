@@ -134,3 +134,35 @@
 .home:not(.collapsed) {
   margin-left: 250px; /* Ancho del Sider cuando está expandido */
 }
+
+
+
+/* Estilos para el footer */
+
+.footer {
+  background-color: #f0f2f5;
+  padding: 24px;
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  z-index: 100;
+}
+
+.footer-link {
+  margin-left: 20px;
+}
+
+@media (max-width: 576px) {
+  .footer .ant-row {
+    text-align: center;
+  }
+  
+  .footer .ant-col {
+    margin-bottom: 10px;
+  }
+  
+  .footer-link {
+    display: block;
+    margin: 10px 0;
+  }
+}

@@ -21,7 +21,8 @@ const Login = () => {
       const token = await userCredential.user.getIdToken();
       saveToken(token); 
       localStorage.setItem("token", token); 
-      localStorage.setItem("user", email); 
+      localStorage.setItem("user", email);
+      localStorage.setItem("role", "admin");
       message.success("Login Successfully");
       window.location.href = "/"; 
     } catch (error) {
