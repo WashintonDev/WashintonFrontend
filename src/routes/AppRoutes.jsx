@@ -4,7 +4,7 @@ import ProtectedRoute from '../components/protectedRoutes';
 import Home from '../pages/Home/Home';
 import Suppliers from '../pages/Suppliers/Suppliers';
 import Login from '../pages/Login/Login';
-import SignUp from '../pages/login/sign-up';
+import SignUp from '../pages/Login/sign-up';
 import Inventory from '../pages/Inventory/Inventory';
 import Sales from '../pages/Sales/Sales';
 import TransferOrders from '../pages/TransferOrders/TransferOrders'
