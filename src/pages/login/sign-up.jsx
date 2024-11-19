@@ -1,27 +1,68 @@
-import React, { useState } from "react";
-import { Form, Input, Button, Checkbox, Typography, Divider, Space, message } from "antd";
-import Icon, { MailOutlined, LockOutlined } from "@ant-design/icons";
-import { auth } from "../../services/firebaseConfig"; // Asegúrate de tener la configuración de Firebase correctamente importada
+import { useState } from "react";
+import { Form, Input, Button, Typography, message, notification, Select } from "antd";
+import { MailOutlined, LockOutlined, UserOutlined, PhoneOutlined, ShopOutlined } from "@ant-design/icons";
+import { auth } from "../../services/firebaseConfig";
+import axios from "axios";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import "../../assets/styles/login.css";
-import googleIcon from "../../assets/images/google.png";
+import { useNavigate } from "react-router-dom";
+import { API_URL_USERS } from "../../services/ApisConfig"; 
 
 const { Title, Text, Link } = Typography;
+const { Option } = Select;
 
 const SignUp = () => {
+  const Navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
   const onFinish = async (values) => {
-    const { email, password } = values;
+    const { first_name, last_name, email, password, phone, role } = values;
     try {
       setLoading(true);
-      await createUserWithEmailAndPassword(auth, email, password);
-      message.success("User, Register Succesfulyy");
-      localStorage.setItem('user', email);  // Guardamos el usuario en localStorage
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  
+      const firebase_user_ID = userCredential.user.uid; 
+      console.log(firebase_user_ID);
+      
+      await registerUser({ first_name, last_name, password, email, phone, role, firebase_user_ID });
+      message.success("User registered successfully");
+      Navigate('/');
     } catch (error) {
-      message.error(error.message);
+      message.error("Error registering user: " + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const registerUser = async ({ first_name, last_name, email, password, phone, role, firebase_user_ID }) => {
+    try {
+      const store_id = role === "admin" ? null : "specific_store_id";  // Si es admin, no se asigna store_id
+      const location_type = role === "admin" ? "warehouse" : "store";  // Si es admin, location_type es warehouse
+  
+      // Realiza la llamada POST al backend
+      const response = await axios.post(`${API_URL_USERS}`, {
+        first_name,
+        last_name,
+        email,
+        password,
+        phone,
+        role,
+        location_type, 
+        status: "active",
+        store_id, 
+        firebase_user_ID, 
+      });
+  
+      console.log("Usuario registrado correctamente en la base de datos", response.data);
+  
+    } catch (error) {
+      if (error.response) {
+        console.error("Error al registrar usuario:", error.response.data);
+        throw new Error("Error registering user: " + error.response.data.message || error.response.data);
+      } else {
+        console.error("Error sin respuesta:", error);
+        throw new Error("Error registering user: " + error.message);
+      }
     }
   };
 
@@ -29,32 +70,26 @@ const SignUp = () => {
     <div className="login-container">
       <div className="login-box">
         <Title level={3}>Sign Up</Title>
-
         <Form name="signup" onFinish={onFinish} className="login-form">
-          <Form.Item
-            name="email"
-            rules={[{ required: true, message: "Please enter your email" }]}
-          >
-            <Input
-              prefix={<MailOutlined />}
-              placeholder="Email Address"
-              size="large"
-            />
+          <Form.Item name="first_name" rules={[{ required: true, message: "Type Your First Name" }]}>
+            <Input prefix={<UserOutlined />} placeholder="First Name" size="large" />
           </Form.Item>
 
-          <Form.Item
-            name="password"
-            rules={[{ required: true, message: "Please enter your password" }]}
-          >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="Password"
-              size="large"
-            />
+          <Form.Item name="last_name" rules={[{ required: true, message: "Type Your Last Name" }]}>
+            <Input prefix={<UserOutlined />} placeholder="Last Name" size="large" />
+          </Form.Item>
+
+          <Form.Item name="email" rules={[{ required: true, message: "Please enter your email" }]}>
+            <Input prefix={<MailOutlined />} placeholder="Email Address" size="large" />
+          </Form.Item>
+
+          <Form.Item name="password" rules={[{ required: true, message: "Please enter your password" }]}>
+            <Input.Password prefix={<LockOutlined />} placeholder="Password" size="large" />
           </Form.Item>
 
           <Form.Item
             name="confirmPassword"
+            dependencies={['password']}
             rules={[
               { required: true, message: "Please confirm your password" },
               ({ getFieldValue }) => ({
@@ -67,35 +102,32 @@ const SignUp = () => {
               }),
             ]}
           >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="Confirm Password"
-              size="large"
-            />
+            <Input.Password prefix={<LockOutlined />} placeholder="Confirm Password" size="large" />
           </Form.Item>
 
-          {/* <Form.Item>
-            <Checkbox>Agree to Terms and Conditions</Checkbox>
-          </Form.Item> */}
+          <Form.Item name="phone" rules={[{ required: true, message: "Please type your phone number" }, { len: 10, message: "Phone number must be 10 digits" },
+              { pattern: /^[0-9]{10}$/, message: "Phone number must be numeric" }
+            ]}>
+            <Input prefix={<PhoneOutlined />} placeholder="Phone Number" size="large" />
+          </Form.Item>
+
+          <Form.Item name="role" rules={[{ required: true, message: "Please select a role" }]}>
+            <Select placeholder="Select a role" size="large">
+              <Option value="admin">Admin</Option>
+              <Option value="store">Store</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item name="store_id" rules={[{ required: false }]}>
+            <Input prefix={<ShopOutlined />} placeholder="Store ID" size="large" />
+          </Form.Item>
 
           <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              className="login-form-button"
-              size="large"
-              block
-              loading={loading}
-            >
+            <Button type="primary" htmlType="submit" className="login-form-button" size="large" block loading={loading}>
               Sign Up
             </Button>
           </Form.Item>
         </Form>
-
-        <Divider>Login</Divider>
-        <Space>
-            <Link href="/Login">Sign In</Link>
-        </Space>
       </div>
 
       <Text type="secondary" className="login-footer">
@@ -103,6 +135,6 @@ const SignUp = () => {
       </Text>
     </div>
   );
-    };
+};
 
 export default SignUp;

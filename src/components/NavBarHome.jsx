@@ -1,12 +1,8 @@
-import React, { useState } from 'react';
-import { Dropdown, Menu, Button, Input, Badge, Layout } from 'antd';
-import {
-    UserOutlined, LogoutOutlined, FundProjectionScreenOutlined, SolutionOutlined,
-    FormOutlined, ShoppingOutlined, MenuFoldOutlined, ExclamationCircleOutlined,
-    TruckOutlined, FundOutlined
+import  { useState } from 'react';
+import { Dropdown, Menu, Button, Layout } from 'antd';
+import { UserOutlined, LogoutOutlined, FundProjectionScreenOutlined, SolutionOutlined, FormOutlined, ShoppingOutlined, MenuFoldOutlined, ExclamationCircleOutlined, TruckOutlined, FundOutlined
 } from '@ant-design/icons';
-import { signOut } from "firebase/auth";
-import { auth } from '../services/firebaseConfig';
+import useLogout from '../hooks/logout';
 import { Link, useNavigate } from "react-router-dom";
 import "../assets/styles/login.css";
 
@@ -15,22 +11,11 @@ const { Sider } = Layout;
 const NavBarHome = ({ onSearch, showSearch = true }) => {
     const [collapsed, setCollapsed] = useState(true); 
     const navigate = useNavigate();
-
-    // Función de logout
-    const handleLogout = async () => {
-        try {
-            await signOut(auth);
-            localStorage.removeItem("user");
-            navigate('/login');
-        } catch (error) {
-            console.error('Error logging out', error);
-        }
-    };
-
-    // Menú de configuración
+    const logout = useLogout();
+  
     const settingsMenu = (
         <Menu>
-            <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
+            <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={logout}>
                 Log Out
             </Menu.Item>
         </Menu>
@@ -54,7 +39,7 @@ const NavBarHome = ({ onSearch, showSearch = true }) => {
                     expandIcon={null}
                 >
                     <Menu.Item key="dashboard" icon={<FundProjectionScreenOutlined />}>
-                        <Link to="/dashboard">Dashboard</Link>
+                        <Link to="/Admin">Dashboard</Link>
                     </Menu.Item>
 
                     <Menu.Item key="orders" icon={<SolutionOutlined />}>
@@ -68,10 +53,10 @@ const NavBarHome = ({ onSearch, showSearch = true }) => {
                     <Menu.SubMenu key="sales" icon={<ShoppingOutlined />}
                         >
                         <Menu.Item key="sales">
-                            <Link to="/sales">Profile</Link>
+                            <Link to="/sales">Sales</Link>
                         </Menu.Item>
                         <Menu.Item key="sales-report">
-                            <Link to="/sales-report">Settings</Link>
+                            <Link to="/sales-report">Sales-Reports</Link>
                         </Menu.Item>
                     </Menu.SubMenu>
 
@@ -122,17 +107,15 @@ const NavBarHome = ({ onSearch, showSearch = true }) => {
             </Sider>
 
             <Layout>
-                <div style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', backgroundColor: '#f8fafc', borderBottom: '1px solid #ddd' }}>
-                    <Button icon={<MenuFoldOutlined />} shape="square" onClick={() => setCollapsed(!collapsed)} />
+            <div style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', backgroundColor: '#f8fafc', borderBottom: '1px solid #ddd' }}>
+                <Button icon={<MenuFoldOutlined />} shape="square" onClick={() => setCollapsed(!collapsed)} />
 
-                    {showSearch && <Input.Search placeholder="Search" style={{ marginLeft: '10px' }} />}
-
-                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
-                        <Dropdown overlay={settingsMenu} placement="bottomLeft" trigger={['click']}>
-                            <Button icon={<UserOutlined />} shape="circle" style={{ marginLeft: '10px' }} />
-                        </Dropdown>
-                    </div>
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+                    <Dropdown overlay={settingsMenu} placement="bottomRight" trigger={['click']}>
+                        <Button icon={<UserOutlined />} shape="circle" />
+                    </Dropdown>
                 </div>
+            </div>
             </Layout>
         </Layout>
     );

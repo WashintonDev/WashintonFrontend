@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import  { useEffect, useState } from 'react';
 import { Table, Input, InputNumber, notification, Button, Image, Select, Divider, Modal } from 'antd';
 import { API_URL_PRODUCTS } from '../../services/ApisConfig';
 import { CloseOutlined, DollarOutlined } from '@ant-design/icons';
