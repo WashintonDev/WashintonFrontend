@@ -21,7 +21,7 @@ const useWarehouseTransfers = () => {
           title: `Transfer ${transfer.transfer_id} - ${transfer.status}`,
           start: transfer.transfer_date,
           allDay: true,
-          className: `event-${transfer.status.toLowerCase()}`, // Clase para personalizar estilos según el estado
+          className: `event-${transfer.status.toLowerCase()}`,
         }));
 
         setEvents(mappedEvents);

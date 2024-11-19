@@ -24,7 +24,7 @@ const CalendarDispatch = () => {
         style={{justifyContent: "center", alignItems: "center" }}
       >
         <div className="calendar-container">
-          <div className="sidebar">
+          {/* <div className="sidebar">
             <h3>Opciones</h3>
             <ul>
               <li>Drag-n-Drop Events</li>
@@ -34,7 +34,7 @@ const CalendarDispatch = () => {
               <li>Background Events</li>
               <li>Time Zones</li>
             </ul>
-          </div>
+          </div> */}
           <div className="calendar">
             <h2 className="calendar-title">Warehouse Transfer Schedule</h2>
             <FullCalendar
