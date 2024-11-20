@@ -1,36 +1,103 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import ProtectedRoute from '../components/protectedRoutes';
-import Login from '../pages/Login/Login';
-import Home from '../pages/Home/Home';
-import Suppliers from '../pages/Suppliers/Suppliers';
-import SignUp from '../pages/Login/Sign-up';
-import Inventory from '../pages/Inventory/Inventory';
-import Sales from '../pages/Sales/Sales';
-import TransferOrders from '../pages/TransferOrders/TransferOrders';
-import Dispatch from '../pages/Dispatch/dispatch';
-import Admin from '../pages/Dashboard/Admin';
-import Profile from '../pages/Profile/Profile';
-import UserManagement from '../pages/Dashboard/UserManagement';
+import React, { useState } from "react";
+import {
+  Form,
+  Input,
+  Button,
+  Checkbox,
+  Typography,
+  Divider,
+  Space,
+  message,
+} from "antd";
+import { MailOutlined, LockOutlined } from "@ant-design/icons";
+import { auth } from "../../services/firebaseConfig"; // Asegúrate de tener la configuración de Firebase correctamente importada
+import { signInWithEmailAndPassword } from "firebase/auth";
+import "../../assets/styles/login.css";
+import googleIcon from "../../assets/images/google.png";
 
-const AppRoutes = () => (
-  <Router>
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/suppliers/*" element={<Suppliers />} />
-        <Route path="/inventory/*" element={<Inventory />} />
-        <Route path="/sign-up" element={<SignUp />} />
-        <Route path="/sales/*" element={<Sales />} />
-        <Route path="/dispatch/*" element={<Dispatch />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/transfer-orders/*" element={<TransferOrders />} />
-        <Route path="/Admin/*" element={<Admin />} />
-        <Route path="/admin/users" element={<UserManagement />} />
-      </Route>
-    </Routes>
-  </Router>
-);
+const { Title, Text, Link } = Typography;
 
-export default AppRoutes;
+const Login = () => {
+  const [loading, setLoading] = useState(false);
+
+  const onFinish = async (values) => {
+    const { email, password } = values;
+    try {
+      setLoading(true);
+      // Iniciar sesión con Firebase Authentication
+      await signInWithEmailAndPassword(auth, email, password);
+
+      message.success("Login Succesfully");
+      localStorage.setItem("user", email);
+      // Redirigir a la página principal u otra página
+      window.location.href = "/";
+    } catch (error) {
+      message.error("Credenciales incorrectas");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="login-container">
+      <div className="login-box">
+        <Title level={3}>Login</Title>
+
+        <Form name="login" onFinish={onFinish} className="login-form">
+          <Form.Item
+            name="email"
+            rules={[{ required: true, message: "Please enter your email" }]}
+          >
+            <Input
+              prefix={<MailOutlined />}
+              placeholder="Email Address"
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            rules={[{ required: true, message: "Please enter your password" }]}
+          >
+            <Input.Password
+              prefix={<LockOutlined />}
+              placeholder="Password"
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Checkbox>Keep me signed in</Checkbox>
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              className="login-form-button"
+              size="large"
+              block
+              loading={loading}
+            >
+              Login
+            </Button>
+          </Form.Item>
+        </Form>
+
+        <Divider>Or login with</Divider>
+        <Space>
+          <Button
+            icon={<img src={googleIcon} alt="Google" className="icono" />}
+          />
+        </Space>
+      </div>
+
+      <Text type="secondary" className="login-footer">
+        This site is protected by{" "}
+        <Link href="/privacy-policy">Privacy Policy</Link>.
+      </Text>
+    </div>
+  );
+};
+
+export default Login;
