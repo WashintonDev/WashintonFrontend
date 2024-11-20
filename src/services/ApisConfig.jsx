@@ -2,6 +2,10 @@
 const BASE_API_URL = import.meta.env.VITE_API_URL;
 const BASE_API_URL_TESTING = 'http://0.0.0.0:8000/api/'
 
+// Product Images API URLs
+export const API_URL_PRODUCT_IMAGES = (productId) => `${BASE_API_URL}product/${productId}/images/`;
+export const API_URL_PRODUCT_IMAGE_DELETE = (imageId) => `${BASE_API_URL}product/image/${imageId}/`;
+
 // Category API URLs
 export const API_URL_CATEGORIES = BASE_API_URL + 'category/';
 export const API_URL_PRODUCTS = BASE_API_URL + 'product/';
