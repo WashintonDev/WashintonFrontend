@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Modal, Form, Input, notification, Button, Space, Tooltip, Tag, Image } from 'antd';
+import { Table, Modal, Form, Input, notification, Button, Space, Tooltip, Tag, Image, Select } from 'antd';
+const { Option } = Select;
 import { API_URL_INVENTORIES, API_URL_CATEGORIES } from '../../services/ApisConfig';
 import { EditOutlined, DeleteOutlined, DollarOutlined } from '@ant-design/icons';
 import Navbar from '../../components/Navbar';
@@ -14,6 +15,10 @@ const InventoryPage = () => {
     const [form] = Form.useForm();
     const [searchText, setSearchText] = useState('');
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [fieldFilter, setFieldFilter] = useState('');
+    const [sortOrder, setSortOrder] = useState('ascend');
+
 
     useEffect(() => {
         fetchInventories();
@@ -100,10 +105,29 @@ const InventoryPage = () => {
         setImageModalVisible(true);
     };
 
-    const filteredInventories = inventories.filter(inventory => {
+    // const filteredInventories = inventories.filter(inventory => {
+    //     const productName = inventory.product?.name || '';
+    //     return productName.toLowerCase().includes(searchText.toLowerCase());
+    // });
+
+    const filteredInventories = inventories
+    .filter(inventory => {
         const productName = inventory.product?.name || '';
+        const status = inventory.product?.status || 'inactive';
+
+        if (statusFilter !== 'all' && status !== statusFilter) return false;
         return productName.toLowerCase().includes(searchText.toLowerCase());
+    })
+    .sort((a, b) => {
+        if (fieldFilter && sortOrder) {
+            const fieldA = a.product?.[fieldFilter] || '';
+            const fieldB = b.product?.[fieldFilter] || '';
+            if (sortOrder === 'ascend') return fieldA > fieldB ? 1 : -1;
+            return fieldA < fieldB ? 1 : -1;
+        }
+        return 0;
     });
+
 
     const getCategoryName = (categoryId) => {
         const category = categories.find(cat => cat.category_id === categoryId);
@@ -220,6 +244,55 @@ const InventoryPage = () => {
                 onSearch={handleSearch}
             />
 
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '16px', marginBottom: '16px' }}>
+                <div>
+                    {/* <label style={{ display: 'block', marginBottom: '4px', color: 'gray', opacity: 0.7, fontStyle: 'italic', fontFamily: 'Arial', fontSize: '13px' }}>
+                        Select:
+                    </label> */}
+                    <Select
+                        // placeholder="select:"
+                        defaultValue="all"
+                        onChange={(value) => setStatusFilter(value)}
+                        style={{ width: 150 }}
+                    >
+                        <Option value="all">All</Option>
+                        <Option value="active">Active</Option>
+                        <Option value="inactive">Inactive</Option>
+                    </Select>
+                </div>
+
+                <div>
+                    {/* <label style={{ display: 'block', marginBottom: '4px', color: 'gray', opacity: 0.7, fontStyle: 'italic', fontFamily: 'Arial', fontSize: '13px' }}>
+                        Sort by:
+                    </label> */}
+                    <Select
+                        placeholder="sort by:"
+                        onChange={(value) => setFieldFilter(value)}
+                        style={{ width: 150 }}
+                    >
+                        <Option value="sku">SKU</Option>
+                        <Option value="price">Price</Option>
+                        <Option value="stock">Stock</Option>
+                        <Option value="location">Location</Option>
+                    </Select>
+                </div>
+
+                <div>
+                    {/* <label style={{ display: 'block', marginBottom: '4px', color: 'gray', opacity: 0.7, fontStyle: 'italic', fontFamily: 'Arial', fontSize: '13px' }}>
+                        Order by:
+                    </label> */}
+                    <Select
+                        placeholder="order by:"
+                        // defaultValue="ascend"
+                        onChange={(value) => setSortOrder(value)}
+                        style={{ width: 150 }}
+                    >
+                        <Option value="ascend">Asc</Option>
+                        <Option value="descend">Desc</Option>
+                    </Select>
+                </div>
+            </div>
+
             <Table
                 dataSource={filteredInventories}
                 columns={columns}
@@ -233,7 +306,7 @@ const InventoryPage = () => {
                         setPagination({ current: page, pageSize });
                     },
                 }}
-                style={{ maxWidth: '80%', margin: '0 auto', fontSize: '0.9em' }}
+                style={{ maxWidth: '90%', margin: '0 auto', fontSize: '0.9em' }}
                 bordered
             />
 
