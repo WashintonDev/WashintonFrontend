@@ -190,13 +190,13 @@ const RestockProductsPage = () => {
           throw new Error('Error al agregar producto al lote');
         }
 
-        await productBatchResponse.json(); // Puedes manejar la respuesta si es necesario
+        await productBatchResponse.json();
       }
 
       notification.success({ message: 'Lote creado y productos asignados exitosamente.' });
       setIsModalVisible(false);
-      setNewBatchName(''); // Reinicia el nombre del lote
-      setSelectedProducts([]); // Reinicia la lista de productos seleccionados
+      setNewBatchName('');
+      setSelectedProducts([]);
     } catch (error) {
       notification.error({ message: error.message || 'Error al crear el lote' });
     }
@@ -204,7 +204,7 @@ const RestockProductsPage = () => {
 
   // Función para generar un código aleatorio
   const generateRandomCode = () => {
-    return Math.random().toString(36).substring(2, 12).toUpperCase(); // Genera un código de 10 caracteres
+    return Math.random().toString(36).substring(2, 12).toUpperCase();
   };
 
   const filteredProducts = products.filter((product) =>
