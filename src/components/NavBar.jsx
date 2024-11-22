@@ -40,18 +40,6 @@ const NavBarMenu = ({ title, onAddCategory, onSearch, showSearch = true, showAdd
     return (
         <div style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', backgroundColor: '#f5f5f5', borderBottom: '1px solid #ddd' }}>
             <Title level={2} style={{ margin: 0 }}>{title}</Title>
-            {!isRestockPage && showSearch && (
-                <Input.Search
-                    placeholder="Search..."
-                    onChange={e => onSearch(e.target.value)} // Llama a onSearch instantáneamente
-                    style={{ width: 200, marginLeft: '20px' }}
-                />
-            )}
-            {!isRestockPage && showAdd && (
-                <Button type="primary" onClick={onAddCategory} style={{ marginLeft: '20px' }}>
-                    Add {title}
-                </Button>
-            )}
             <div style={{ marginLeft: 'auto' }}>
                 <Dropdown overlay={operationsMenu} placement="bottomLeft" trigger={['click']}>
                     <Button>Operations</Button>
