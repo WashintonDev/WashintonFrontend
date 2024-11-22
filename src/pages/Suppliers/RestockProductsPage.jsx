@@ -356,7 +356,7 @@ const RestockProductsPage = () => {
       {/* Modal */}
       <Modal
         title="Crear Lote"
-        visible={isModalVisible}
+        open={isModalVisible}
         onOk={handleCreateBatch}
         onCancel={() => setIsModalVisible(false)}
       >

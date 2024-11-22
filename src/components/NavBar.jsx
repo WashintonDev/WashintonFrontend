@@ -41,13 +41,13 @@ const NavBarMenu = ({ title, onAddCategory, onSearch, showSearch = true, showAdd
         <div style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', backgroundColor: '#f5f5f5', borderBottom: '1px solid #ddd' }}>
             <Title level={2} style={{ margin: 0 }}>{title}</Title>
             <div style={{ marginLeft: 'auto' }}>
-                <Dropdown overlay={operationsMenu} placement="bottomLeft" trigger={['click']}>
+                <Dropdown menu={operationsMenu} placement="bottomLeft" trigger={['click']}>
                     <Button>Operations</Button>
                 </Dropdown>
-                <Dropdown overlay={reportsMenu} placement="bottomLeft" trigger={['click']}>
+                <Dropdown menu={reportsMenu} placement="bottomLeft" trigger={['click']}>
                     <Button style={{ marginLeft: '10px' }}>Reports</Button>
                 </Dropdown>
-                <Dropdown overlay={settingsMenu} placement="bottomLeft" trigger={['click']}>
+                <Dropdown menu={settingsMenu} placement="bottomLeft" trigger={['click']}>
                     <Button style={{ marginLeft: '10px' }}>Settings</Button>
                 </Dropdown>
             </div>
