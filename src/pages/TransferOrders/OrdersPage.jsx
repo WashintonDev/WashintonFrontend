@@ -40,33 +40,39 @@ const OrdersPage = () => {
     }, []);
 
     const fetchAllData = async () => {
-        setLoading(true); // Start loading
-
+        setLoading(true);
+    
         try {
-            const stores = await fetchDataTesting(API_URL_STORE_LABELS);
-            const products = await fetchDataTesting(API_URL_PRODUCT_LABELS);
-
+            const [stores, products, orders] = await Promise.all([
+                fetchDataTesting(API_URL_STORE_LABELS),
+                fetchDataTesting(API_URL_PRODUCT_LABELS),
+                fetchDataTesting(API_URL_TRANSPORT_ORDER),
+            ]);
+    
             setStoreLabels(stores);
             setProductLabels(products);
-
-            let orders = await fetchDataTesting(API_URL_TRANSPORT_ORDER);
-
-            setTransferOrders(orders.map(order => ({
+    
+            const formattedOrders = orders.map(order => ({
                 transfer_id: order.transfer_id,
                 store: stores.find(store => store.value === order.store_id)?.label || "Unknown Store",
                 transfer_date: formatDate(order.transfer_date),
                 status: order.status,
                 details: order.details.map(detail => ({
                     product: products.find(product => product.value === detail.product_id)?.label || "Unknown Product",
-                    quantity: detail.quantity
-                }))
-            })));
+                    quantity: detail.quantity,
+                    price: detail.product.price
+                })),
+            }));
+    
+            setTransferOrders(formattedOrders);
+            console.log(orders)
         } catch (error) {
             notification.error({ message: 'Error fetching data' });
         } finally {
-            setLoading(false); // End loading
+            setLoading(false);
         }
     };
+    
 
     function formatDate(dateString) { 
         const options = { year: 'numeric', month: 'long', day: 'numeric' }; 
@@ -248,7 +254,7 @@ const OrdersPage = () => {
             dataIndex: 'details',
             width: 80,
             align: 'center',
-            render: (text,render) => (<Button onClick={() => {setSelectedOrder(text); setIsDetailModalVisible(true)}}>Expand</Button>)
+            render: (text,render) => (<Button onClick={() => {setSelectedOrder(text); setIsDetailModalVisible(true); console.log(text)}}>Expand</Button>)
         },
         {
             title: 'QR Code',
@@ -257,6 +263,30 @@ const OrdersPage = () => {
             align: 'center',
             render: (record) => (<Button onClick={() => {setQRCodeText(record.transfer_id); setIsQRModalVisible(true)}}><QrcodeOutlined /></Button> )
         },
+    ];
+
+    const productColumns = [
+        {
+            title: 'Product',
+            key: 'product',
+            dataIndex: 'product',
+            width: 50,
+            align: 'center',
+        },
+        {
+            title: 'Quantity',
+            key: 'qty',
+            dataIndex: 'quantity',
+            width: 50,
+            align: 'center'
+        },
+        {
+            title: 'Price',
+            key: 'price',
+            dataIndex: 'price',
+            width: 50,
+            align: 'center'
+        }
     ];
     
 
@@ -367,21 +397,15 @@ const OrdersPage = () => {
             footer = {null}
             maxHeight = {400}
             >
-                   <List
-                            header="Products"
-                            bordered
-                            dataSource={selectedOrder}
-                            style={{
-                                overflowY: "auto"  // Enable vertical scrolling
-                              }}
-                            renderItem={(item) => (
-                                <List.Item>
-                                  <Typography.Text mark strong>{item.product}</Typography.Text> - Quantity: {item.quantity}
-                                </List.Item>
-                              )}
-                            />
+                    <Table
+                    columns={productColumns}
+                    dataSource={selectedOrder}
+                    style = {{padding: 20}}
+                    pagination={{ pageSize: 5 }}
+                    />
 
             </Modal>   
+            
             <Modal
             visible={isQRModalVisible}
             title = 'Scan the Code to Confirm Order'
