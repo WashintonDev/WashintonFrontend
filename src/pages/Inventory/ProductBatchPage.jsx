@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Modal, Button, notification, Tag, Image, Select, Checkbox } from 'antd';
+import { Table, Modal, Button, notification, Tag, Image, Select, Checkbox, Space, Typography } from 'antd';
 import { BarcodeOutlined, QrcodeOutlined } from '@ant-design/icons';
 import { QRCodeCanvas } from 'qrcode.react';
 import { API_URL_PRODUCT_BATCH, API_URL_BATCH, API_URL_BATCH_UPDATE_STATUS, API_URL_BATCH_BULK_UPDATE_STATUS } from '../../services/ApisConfig';
 import Navbar from '../../components/Navbar';
 
 const { Option } = Select;
+const { Title, Text } = Typography;
 
 const ProductBatchPage = () => {
     const [batches, setBatches] = useState([]);
@@ -180,23 +181,21 @@ const ProductBatchPage = () => {
             title: 'Actions',
             key: 'actions',
             render: (_, batch) => (
-                <>
+                <Space>
                     <Button type="primary" onClick={() => handleViewProducts(batch)}>
                         View Products
                     </Button>
                     <Button
                         icon={<BarcodeOutlined />}
                         onClick={() => handleShowCode(batch.code, true)}
-                        style={{ marginLeft: 8 }}
                     />
                     <Button
                         icon={<QrcodeOutlined />}
                         onClick={() => handleShowCode(batch.code, false)}
-                        style={{ marginLeft: 8 }}
                     />
-                </>
+                </Space>
             ),
-            width: 100,
+            width: 150,
         },
     ];
 
@@ -239,46 +238,48 @@ const ProductBatchPage = () => {
     return (
         <div>
             <Navbar title="Product Batches" showSearch={false} showAdd={false} />
-            <div style={{ marginBottom: 16 }}>
-                <Select
-                    value={bulkStatus}
-                    onChange={setBulkStatus}
-                    placeholder="Select status to update"
-                    style={{ width: 200, marginRight: 8 }}
-                >
-                    <Option value="pending">Pending</Option>
-                    <Option value="in_process">In Process</Option>
-                    <Option value="received">Received</Option>
-                    <Option value="cancelled">Cancelled</Option>
-                </Select>
-                <Button
-                    type="primary"
-                    onClick={handleBulkStatusChange}
-                    disabled={!bulkStatus || selectedBatchIds.length === 0}
-                    loading={updatingStatus}
-                >
-                    Update Selected
-                </Button>
+            <div style={{ padding: '20px', maxWidth: '80%', margin: '0 auto' }}>
+                <Space style={{ marginBottom: 16 }}>
+                    <Select
+                        value={bulkStatus}
+                        onChange={setBulkStatus}
+                        placeholder="Select status to update"
+                        style={{ width: 200 }}
+                    >
+                        <Option value="pending">Pending</Option>
+                        <Option value="in_process">In Process</Option>
+                        <Option value="received">Received</Option>
+                        <Option value="cancelled">Cancelled</Option>
+                    </Select>
+                    <Button
+                        type="primary"
+                        onClick={handleBulkStatusChange}
+                        disabled={!bulkStatus || selectedBatchIds.length === 0}
+                        loading={updatingStatus}
+                    >
+                        Update Selected
+                    </Button>
+                </Space>
+                <Table
+                    dataSource={Array.isArray(batches) ? batches : []}
+                    columns={columns}
+                    rowKey="batch_id"
+                    pagination={{
+                        current: pagination.current,
+                        pageSize: pagination.pageSize,
+                        total: batches.length,
+                        onChange: (page) => setPagination({ ...pagination, current: page }),
+                    }}
+                    style={{ marginTop: 16 }}
+                />
             </div>
-            <Table
-                dataSource={Array.isArray(batches) ? batches : []}
-                columns={columns}
-                rowKey="batch_id"
-                pagination={{
-                    current: pagination.current,
-                    pageSize: pagination.pageSize,
-                    total: batches.length,
-                    onChange: (page) => setPagination({ ...pagination, current: page }),
-                }}
-                style={{ maxWidth: '80%', margin: '0 auto' }}
-            />
 
             <Modal
                 title={
-                    <span>
-                        <strong>Products in Batch: {selectedBatchName}</strong> <br />
-                        <span>Status: {selectedBatchStatus}</span>
-                    </span>
+                    <div>
+                        <Title level={4}>Products in Batch: {selectedBatchName}</Title>
+                        <Text>Status: {selectedBatchStatus}</Text>
+                    </div>
                 }
                 visible={productsModalVisible}
                 onCancel={() => setProductsModalVisible(false)}
@@ -299,18 +300,16 @@ const ProductBatchPage = () => {
                 footer={null}
                 width={400}
             >
-                {showBarcode ? (
-                    <div style={{ textAlign: 'center' }}>
+                <div style={{ textAlign: 'center' }}>
+                    {showBarcode ? (
                         <img
                             src={`https://barcode.tec-it.com/barcode.ashx?data=${currentCode}&code=Code128&translate-esc=false`}
                             alt="Barcode"
                         />
-                    </div>
-                ) : (
-                    <div style={{ textAlign: 'center' }}>
+                    ) : (
                         <QRCodeCanvas value={currentCode} />
-                    </div>
-                )}
+                    )}
+                </div>
             </Modal>
         </div>
     );
