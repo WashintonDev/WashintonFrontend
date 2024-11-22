@@ -23,7 +23,8 @@ import {
   API_URL_CATEGORIES,
   API_URL_BATCH,
   API_URL_PRODUCT_BATCH,
-  API_URL_CREATE_BATCH
+  API_URL_CREATE_BATCH,
+  API_URL_INVENTORIES
 } from '../../services/ApisConfig';
 import Navbar from '../../components/Navbar';
 import CardSkeleton from '../../components/CardSkeleton/CardSkeleton';
@@ -44,10 +45,12 @@ const RestockProductsPage = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [inventories, setInventories] = useState([]);
 
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchInventories();
   }, [pagination.current]);
 
   const fetchCategories = async () => {
@@ -80,6 +83,22 @@ const RestockProductsPage = () => {
       notification.error({ message: error.message || 'Error fetching products' });
       setLoading(false);
     }
+  };
+
+  const fetchInventories = async () => {
+    try {
+      const response = await fetch(API_URL_INVENTORIES);
+      if (!response.ok) throw new Error('Error fetching inventories');
+      const data = await response.json();
+      setInventories(data);
+    } catch (error) {
+      notification.error({ message: error.message || 'Error fetching inventories' });
+    }
+  };
+
+  const getStockForProduct = (productId) => {
+    const inventory = inventories.find(inv => inv.product_id === productId && inv.warehouse_id === 1);
+    return inventory ? inventory.stock : 0;
   };
 
   const handleSelectProduct = (product) => {
@@ -261,6 +280,13 @@ const RestockProductsPage = () => {
         return <Text>{category ? category.name : 'Sin Categoría'}</Text>;
       },
       width: 120,
+      align: 'center',
+    },
+    {
+      title: 'Stock',
+      key: 'stock',
+      render: (_, record) => getStockForProduct(record.product_id),
+      width: 100,
       align: 'center',
     },
     {
