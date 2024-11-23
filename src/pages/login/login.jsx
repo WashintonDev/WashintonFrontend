@@ -1,14 +1,5 @@
 import React, { useState } from "react";
-import {
-  Form,
-  Input,
-  Button,
-  Checkbox,
-  Typography,
-  Divider,
-  Space,
-  message,
-} from "antd";
+import { Form, Input, Button, Checkbox, Typography, Divider, Space, message } from "antd";
 import { MailOutlined, LockOutlined } from "@ant-design/icons";
 import { auth } from "../../services/firebaseConfig"; // Asegúrate de tener la configuración de Firebase correctamente importada
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -26,11 +17,11 @@ const Login = () => {
       setLoading(true);
       // Iniciar sesión con Firebase Authentication
       await signInWithEmailAndPassword(auth, email, password);
-
+      
       message.success("Login Succesfully");
-      localStorage.setItem("user", email);
+      localStorage.setItem("user", email); 
       // Redirigir a la página principal u otra página
-      window.location.href = "/";
+      window.location.href = "/"; 
     } catch (error) {
       message.error("Credenciales incorrectas");
     } finally {
@@ -86,15 +77,12 @@ const Login = () => {
 
         <Divider>Or login with</Divider>
         <Space>
-          <Button
-            icon={<img src={googleIcon} alt="Google" className="icono" />}
-          />
+          <Button icon={<img src={googleIcon} alt="Google" className="icono" />} />
         </Space>
       </div>
 
       <Text type="secondary" className="login-footer">
-        This site is protected by{" "}
-        <Link href="/privacy-policy">Privacy Policy</Link>.
+        This site is protected by <Link href="/privacy-policy">Privacy Policy</Link>.
       </Text>
     </div>
   );
