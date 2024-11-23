@@ -14,53 +14,44 @@ const CalendarDispatch = () => {
     alert(`Evento: ${info.event.title}`);
   };
 
-  if (loading) return <CalendarSkeleton/>
+  if (loading) return <CalendarSkeleton />;
   if (error) return <p>Error: {error}</p>;
 
   return (
     <>
-      <Navbar title="Dispatch" showSearch={false} showAdd={false} />
-      <div
-        style={{justifyContent: "center", alignItems: "center" }}
-      >
-        <div className="calendar-container">
-          {/* <div className="sidebar">
-            <h3>Opciones</h3>
-            <ul>
-              <li>Drag-n-Drop Events</li>
-              <li>Resource Timeline</li>
-              <li>Year Views</li>
-              <li>Selectable Dates</li>
-              <li>Background Events</li>
-              <li>Time Zones</li>
-            </ul>
-          </div> */}
-          <div className="calendar">
-            <h2 className="calendar-title">Warehouse Transfer Schedule</h2>
-            <FullCalendar
-              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-              initialView="dayGridMonth"
-              editable={true}
-              droppable={true}
-              headerToolbar={{
-                left: "prev,next today",
-                center: "title",
-                right: "dayGridMonth,timeGridWeek,timeGridDay",
-              }}
-              buttonText={{
-                today: "Today",
-                month: "Month",
-                week: "Week",
-                day: "Day",
-              }}
-              events={events}
-              eventDisplay="block"
-              eventColor="rgba(0, 123, 255, 0.5)"
-              eventTextColor="#fff"
-              eventClick={handleEventClick}
-            />
-          </div>
-        </div>
+      <Navbar title="Dispatch Calendar" showSearch={false} showAdd={false} />
+      <div className="calendar-wrapper">
+        <h2 className="calendar-title">Warehouse Transfer Schedule</h2>
+        <FullCalendar
+          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          initialView="dayGridMonth"
+          editable={true}
+          droppable={true}
+          headerToolbar={{
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,timeGridWeek,timeGridDay",
+          }}
+          buttonText={{
+            today: "Today",
+            month: "Month",
+            week: "Week",
+            day: "Day",
+          }}
+          events={events}
+          eventDisplay="block"
+          eventClick={handleEventClick}
+          eventClassNames={(arg) => {
+            if (arg.event.extendedProps.status === "pending") {
+              return "event-pending";
+            } else if (arg.event.extendedProps.status === "completed") {
+              return "event-completed";
+            } else if (arg.event.extendedProps.status === "cancelled") {
+              return "event-cancelled";
+            }
+            return "";
+          }}
+        />
       </div>
     </>
   );

@@ -73,12 +73,12 @@ const NavBarHome = ({ onSearch, showSearch = true }) => {
                 <Link to="/sales-report">Settings</Link>
               </Menu.Item>
             </Menu.SubMenu>
-            <Menu.SubMenu key="sales" icon={<SendOutlined />}>
+            <Menu.SubMenu key="Dispatch" icon={<SendOutlined />}>
               <Menu.Item key="History Global">
                 <Link to="/suppliers/history-supplier">History</Link>
               </Menu.Item>
               <Menu.Item key="calendar">
-                <Link to="/dispatch">Settings</Link>
+                <Link to="/dispatch">Calendar</Link>
               </Menu.Item>
             </Menu.SubMenu>
 
