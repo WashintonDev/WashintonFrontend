@@ -402,7 +402,7 @@ const ProductPage = () => {
       <span style={{ fontWeight: "bold", color: "#4b6cb7" }}>Images</span>
     ),
     key: "multipleImages",
-    width: 170,
+    width: 130,
     render: (_, record) => (
 <Button
   icon={<PictureOutlined />}
@@ -426,7 +426,6 @@ const ProductPage = () => {
 </Button>
 
     ),
-    width: 130,
   },
   {
     title: <span style={{ fontWeight: "bold", color: "#4b6cb7" }}>Status</span>,
@@ -463,7 +462,7 @@ const ProductPage = () => {
   },
   {
     title: (
-      <span style={{ fontWeight: "bold", color: "#4b6cb7" }}>Quantity</span>
+      <span style={{ fontWeight: "bold", color: "#4b6cb7" }}>Measure</span>
     ),
     key: "quantity",
     render: (text, record) => {

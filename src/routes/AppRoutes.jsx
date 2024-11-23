@@ -8,7 +8,7 @@ import SignUp from "../pages/login/Sign-up";
 import Inventory from "../pages/Inventory/Inventory";
 import Sales from "../pages/Sales/Sales";
 import TransferOrders from "../pages/TransferOrders/TransferOrders";
-import Dispatch from "../pages/Dispatch/dispatch";
+import Dispatch from "../pages/Dispatch/Dispatch";
 const AppRoutes = () => (
   <Router>
     <Routes>
