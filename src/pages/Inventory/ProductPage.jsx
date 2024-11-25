@@ -1,382 +1,1152 @@
-import React, { useEffect, useState } from 'react';
-import { Table, Modal, Form, Input, notification, Button, Space, Tooltip, Tag, Image, Select, Upload } from 'antd';
-import { API_URL_PRODUCTS, API_URL_CATEGORIES, API_URL_SUPPLIERS } from '../../services/ApisConfig';
-import { EditOutlined, DeleteOutlined, DollarOutlined, UploadOutlined } from '@ant-design/icons';
-import Navbar from '../../components/Navbar';
+import React, { useEffect, useState } from "react";
+import {
+  Table,
+  Modal,
+  Form,
+  Input,
+  notification,
+  Button,
+  Space,
+  Tooltip,
+  Tag,
+  Image,
+  Select,
+  Upload,
+} from "antd";
+import {
+  API_URL_PRODUCTS,
+  API_URL_CATEGORIES,
+  API_URL_SUPPLIERS,
+  API_URL_PRODUCT_IMAGES,
+  API_URL_PRODUCT_IMAGE_DELETE,
+} from "../../services/ApisConfig";
+import {
+  EditOutlined,
+  DeleteOutlined,
+  DollarOutlined,
+  UploadOutlined,
+  PictureOutlined,
+} from "@ant-design/icons";
+import Navbar from "../../components/Navbar";
 
 const { Option } = Select;
 
+const unitOptions = [
+  { label: "Litros", value: "L" },
+  { label: "Mililitros", value: "mL" },
+  { label: "Kilogramos", value: "kg" },
+  { label: "Gramos", value: "g" },
+  { label: "Miligramos", value: "mg" },
+];
+
+const typeOptions = [
+  "Aerosol",
+  "Líquido",
+  "Barra",
+  "Polvo",
+  "Gel",
+  "Pasta",
+  "Spray",
+  "Tableta",
+  "Granulado",
+  "Espuma",
+  "Accesorio",
+  "Herramienta",
+  "Otro",
+];
+
 const ProductPage = () => {
-    const [products, setProducts] = useState([]);
-    const [categories, setCategories] = useState([]);
-    const [parentCategories, setParentCategories] = useState([]);
-    const [subCategories, setSubCategories] = useState([]);
-    const [suppliers, setSuppliers] = useState([]);
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const [editingProduct, setEditingProduct] = useState(null);
-    const [form] = Form.useForm();
-    const [file, setFile] = useState([]);
-    const [searchText, setSearchText] = useState('');
-    const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
-    
+  const [products, setProducts] = useState([]);
+  const [isImageModalVisible, setIsImageModalVisible] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState(null);
+  const [productImages, setProductImages] = useState([]);
+  const [newImages, setNewImages] = useState([]);
+  const [fileList, setFileList] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [parentCategories, setParentCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false); // Para el modal de editar rápido
+  const [editingProduct, setEditingProduct] = useState(null); // Producto en edición
+  const [form] = Form.useForm();
+  const [file, setFile] = useState([]);
+  const [searchText, setSearchText] = useState("");
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
+  const [removeImage, setRemoveImage] = useState(false);
+  const [filterSupplier, setFilterSupplier] = useState(null);
+  const [filterCategory, setFilterCategory] = useState(null);
+  const [filterType, setFilterType] = useState(null);
+  
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+    fetchSuppliers();
+  }, []);
 
-    useEffect(() => {
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch(API_URL_CATEGORIES);
+      if (!response.ok) throw new Error("Error fetching categories");
+      const data = await response.json();
+      setCategories(data);
+      setParentCategories(data.filter((cat) => cat.parent_id === null));
+    } catch (error) {
+      notification.error({
+        message: error.message || "Error fetching categories",
+      });
+    }
+  };
+
+  const fetchSuppliers = async () => {
+    try {
+      const response = await fetch(API_URL_SUPPLIERS);
+      if (!response.ok) throw new Error("Error fetching suppliers");
+      const data = await response.json();
+      setSuppliers(data);
+    } catch (error) {
+      notification.error({
+        message: error.message || "Error fetching suppliers",
+      });
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch(API_URL_PRODUCTS);
+      if (!response.ok) throw new Error("Error fetching products");
+      const data = await response.json();
+      setProducts(data.sort((a, b) => a.product_id - b.product_id));
+    } catch (error) {
+      notification.error({
+        message: error.message || "Error fetching products",
+      });
+    }
+  };
+  
+
+  const fetchProductImages = async (productId) => {
+    try {
+      const response = await fetch(API_URL_PRODUCT_IMAGES(productId));
+      if (!response.ok) throw new Error("Error fetching product images");
+      const data = await response.json();
+      setProductImages(data);
+    } catch (error) {
+      notification.error({ message: error.message });
+    }
+  };
+
+  const handleOpenImageModal = (productId) => {
+    setSelectedProductId(productId);
+    setIsImageModalVisible(true);
+    fetchProductImages(productId);
+  };
+
+  const handleImageModalClose = () => {
+    setIsImageModalVisible(false);
+    setNewImages([]);
+    setFileList([]);
+  };
+
+  const handleQuickEdit = (product) => {
+    setEditingProduct(product); // Establece el producto en edición
+    form.setFieldsValue({
+      price: product.price,
+      status: product.status,
+    });
+    setIsEditModalVisible(true);
+  };
+  
+  const handleAddImages = async () => {
+    const formData = new FormData();
+    newImages.forEach((file) => {
+      formData.append("images[]", file.originFileObj);
+    });
+
+    try {
+      const response = await fetch(API_URL_PRODUCT_IMAGES(selectedProductId), {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Error uploading images");
+      notification.success({ message: "Images uploaded successfully" });
+      fetchProductImages(selectedProductId);
+      setNewImages([]);
+    } catch (error) {
+      notification.error({ message: error.message });
+    }
+  };
+
+  const handleDeleteImage = async (imageId) => {
+    try {
+      const response = await fetch(API_URL_PRODUCT_IMAGE_DELETE(imageId), {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Error deleting image");
+      notification.success({ message: "Image deleted successfully" });
+      fetchProductImages(selectedProductId);
+    } catch (error) {
+      notification.error({ message: error.message });
+    }
+  };
+
+  const handleImageUpload = ({ fileList }) => {
+    setNewImages(fileList);
+  };
+
+  const handleAdd = () => {
+    setEditingProduct(null);
+    form.resetFields();
+    setNewImages([]); // Limpia las imágenes adicionales
+    setIsModalVisible(true);
+  };
+  
+
+  const handleEdit = (product) => {
+    setEditingProduct(product);
+    form.setFieldsValue({
+      price: product.price,
+      status: product.status,
+    });
+    setIsModalVisible(true);
+  };
+
+  const handleDelete = async (product_id) => {
+    try {
+      await fetch(`${API_URL_PRODUCTS}${product_id}/`, { method: "DELETE" });
+      notification.success({ message: "Product deleted successfully" });
+      fetchProducts();
+    } catch (error) {
+      notification.error({
+        message: error.message || "Error deleting product",
+      });
+    }
+  };
+  const handleFileChange = ({ fileList }) => {
+    // Limitar el fileList a un solo archivo
+    const newFileList = fileList.slice(-1);
+    setFile(newFileList);
+
+    if (newFileList.length === 0) {
+      setRemoveImage(true); // Indicar que se ha eliminado la imagen
+    } else {
+      setRemoveImage(false); // Indicar que hay una nueva imagen o no se ha eliminado
+    }
+  };
+
+  const handlePreview = async (file) => {
+    let src = file.url;
+    if (!src) {
+      src = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file.originFileObj);
+        reader.onload = () => resolve(reader.result);
+      });
+    }
+    const image = new Image();
+    image.src = src;
+    const imgWindow = window.open(src);
+    imgWindow.document.write(image.outerHTML);
+  };
+
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
+  
+      let filteredValues = { ...values };
+  
+      // En caso de edición, enviar solo los campos necesarios
+      if (editingProduct) {
+        filteredValues = {
+          price: values.price,
+          status: values.status,
+        };
+      } else {
+        // En el caso de agregar un producto nuevo, elimina campos no necesarios
+        delete filteredValues.parentCategory;
+      }
+  
+      // Convertir precio a número
+      if (filteredValues.price) {
+        filteredValues.price = parseFloat(filteredValues.price);
+      }
+  
+      const formData = new FormData();
+      Object.keys(filteredValues).forEach((key) => {
+        formData.append(key, filteredValues[key]);
+      });
+  
+      // Agregar imágenes adicionales
+      newImages.forEach((file) => {
+        formData.append("additional_images[]", file.originFileObj);
+      });
+  
+      const config = {
+        method: editingProduct ? "PATCH" : "POST",
+        body: formData,
+      };
+  
+      const url = editingProduct
+        ? `${API_URL_PRODUCTS}${editingProduct.product_id}/`
+        : API_URL_PRODUCTS;
+  
+      const response = await fetch(url, config);
+  
+      if (response.ok) {
+        notification.success({
+          message: editingProduct
+            ? "Product updated successfully"
+            : "Product created successfully",
+        });
         fetchProducts();
-        fetchCategories();
-        fetchSuppliers();
-    }, []);
-
-    const fetchCategories = async () => {
-        try {
-            const response = await fetch(API_URL_CATEGORIES);
-            if (!response.ok) throw new Error('Error fetching categories');
-            const data = await response.json();
-            setCategories(data);
-            setParentCategories(data.filter(cat => cat.parent_id === null));
-        } catch (error) {
-            notification.error({ message: error.message || 'Error fetching categories' });
-        }
-    };
-
-    const fetchSuppliers = async () => {
-        try {
-            const response = await fetch(API_URL_SUPPLIERS);
-            if (!response.ok) throw new Error('Error fetching suppliers');
-            const data = await response.json();
-            setSuppliers(data);
-        } catch (error) {
-            notification.error({ message: error.message || 'Error fetching suppliers' });
-        }
-    };
-
-    const fetchProducts = async () => {
-        try {
-            const response = await fetch(API_URL_PRODUCTS);
-            if (!response.ok) throw new Error('Error fetching products');
-            const data = await response.json();
-            setProducts(data.sort((a, b) => a.product_id - b.product_id));
-        } catch (error) {
-            notification.error({ message: error.message || 'Error fetching products' });
-        }
-    };
-
-    const handleAdd = () => {
-        setEditingProduct(null);
-        form.resetFields();
-        setFile([]); // Esto asegura que esté vacío al agregar un nuevo producto
-        setIsModalVisible(true);
-    };
-    
-
-    const handleEdit = async (product) => {
-        setEditingProduct(product);
-    
-        try {
-            const response = await fetch(`${API_URL_PRODUCTS}sku/${product.sku}`);
-            if (!response.ok) throw new Error('Error fetching product with categories');
-            const data = await response.json();
-    
-            const subCategory = data.sub_category_name;
-            const parentCategory = data.parent_category_name;
-    
-            setSubCategories(categories.filter(cat => cat.parent_id === categories.find(cat => cat.name === parentCategory)?.category_id));
-    
-            form.setFieldsValue({
-                name: data.product.name,
-                description: data.product.description,
-                price: data.product.price,
-                type: data.product.type,
-                category_id: categories.find(cat => cat.name === subCategory)?.category_id,
-                supplier_id: data.product.supplier_id,
-                status: data.product.status,
-                parentCategory: categories.find(cat => cat.name === parentCategory)?.category_id,
-            });
-
-            // Configurar la imagen actual para su previsualización
-            setFile(data.product.image ? [{
-                uid: '-1',
-                name: 'image.png',
-                status: 'done',
-                url: `https://washinton.store/${data.product.image}`,
-            }] : []);
-            setIsModalVisible(true);
-        } catch (error) {
-            notification.error({ message: error.message || 'Error fetching product with categories' });
-        }
-    };
-
-    const handleUploadChange = ({ fileList }) => {
-        setFile(fileList.slice(-1)); // Mantén solo el último archivo seleccionado para evitar duplicados
-    };
-    
-    
-
-    const handleDelete = async (product_id) => {
-        try {
-            await fetch(`${API_URL_PRODUCTS}${product_id}/`, { method: 'DELETE' });
-            notification.success({ message: 'Product deleted successfully' });
-            fetchProducts();
-        } catch (error) {
-            notification.error({ message: error.message || 'Error deleting product' });
-        }
-    };
-
-    const handleOk = async () => {
-        try {
-            const values = await form.validateFields();
-            const jsonPayload = {};
-    
-            Object.keys(values).forEach(key => {
-                if (key !== 'sku' && (!editingProduct || editingProduct[key] !== values[key])) {
-                    jsonPayload[key] = values[key];
-                }
-            });
-    
-            let body;
-            let headers = {};
-    
-            // Usar FormData si hay un archivo para enviar
-            if (file && file.length > 0 && file[0].originFileObj) {
-                const formData = new FormData();
-                Object.keys(jsonPayload).forEach(key => formData.append(key, jsonPayload[key]));
-                formData.append('image', file[0].originFileObj);
-                body = formData;
-            } else {
-                // Si no hay archivo, enviamos JSON
-                body = JSON.stringify(jsonPayload);
-                headers = { 'Content-Type': 'application/json' };
-            }
-    
-            // Verificar la URL
-            const url = editingProduct
-                ? `${API_URL_PRODUCTS}${editingProduct.product_id}/`
-                : API_URL_PRODUCTS;
-    
-            console.log("Datos para JSON (Postman):", JSON.stringify(jsonPayload, null, 2));
-            console.log("URL de actualización o creación:", url);
-    
-            const options = {
-                method: editingProduct ? 'PATCH' : 'POST',
-                headers,
-                body,
-            };
-    
-            const response = await fetch(url, options);
-    
-            if (response.ok) {
-                notification.success({ message: editingProduct ? 'Product updated successfully' : 'Product created successfully' });
-                fetchProducts();
-                setIsModalVisible(false);
-            } else {
-                const errorData = await response.json();
-                console.error("Error en la respuesta del servidor:", errorData);
-                throw new Error('Error saving product');
-            }
-        } catch (error) {
-            console.error("Fetch error:", error);
-            notification.error({ message: error.message || 'Error saving product' });
-        }
-    };
-    
-    
-
-    const handleCancel = () => {
         setIsModalVisible(false);
-    };
+      } else {
+        const errorData = await response.json();
+        console.error("Error en la respuesta del servidor:", errorData);
+        throw new Error("Error saving product");
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+      notification.error({ message: error.message || "Error saving product" });
+    }
+  };
+  
+  const handleCancelAdd = () => {
+    setIsModalVisible(false);
+  };
 
-    const handleParentCategoryChange = (parentId) => {
-        setSubCategories(categories.filter(cat => cat.parent_id === parentId));
-        form.setFieldsValue({ category_id: null });
-    };
+  const handleCancelEdit = () => {
+    setIsEditModalVisible(false);
+  };
+  
+  const handleCancel = () => {
+    setIsModalVisible(false);
+  };
 
-    const columns = [
-        {
-            title: 'No.',
-            key: 'index',
-            render: (_, __, index) => (pagination.current - 1) * pagination.pageSize + index + 1,
-            width: 60,
-        },
-        {
-            title: 'Product Name',
-            dataIndex: 'name',
-            key: 'name',
-            ellipsis: true,
-            width: 400,
-        },
-        {
-            title: 'SKU',
-            dataIndex: 'sku',
-            key: 'sku',
-            ellipsis: true,
-            render: (text, record) => (
-                <Tag color="orange">{record.sku}</Tag>
-            ),
-            width: 130,
-        },
-        {
-            title: 'Price',
-            dataIndex: 'price',
-            key: 'price',
-            render: (text, record) => (
-                <span>
-                    <DollarOutlined style={{ color: 'green' }} /> {record.price}
-                </span>
-            ),
-            width: 150,
-        },
-        {
-            title: 'Category',
-            key: 'category',
-            render: (text, record) => {
-                const category = categories.find(cat => cat.category_id === record.category_id);
-                return <Tag color="purple">{category ? category.name : 'Unknown Category'}</Tag>;
-            },
-            width: 200,
-        },
-        {
-            title: 'Type',
-            dataIndex: 'type',
-            key: 'type',
-            render: (text, record) => (
-                <Tag color="blue">{record.type}</Tag>
-            ),
-            width: 200,
-        },
-        {
-            title: 'Image',
-            key: 'image',
-            width: 100,
-            render: (text, record) => (
-                <Image
-                    width={50}
-                    height={50}
-                    src={record.image ? `https://washinton.store/${record.image}` : 'https://via.placeholder.com/50'}
-                    preview={{ 
-                        src: record.image ? `https://washinton.store/${record.image}` : 'https://via.placeholder.com/800', 
-                        title: record.name 
-                    }}
-                    style={{
-                        cursor: 'pointer',
-                        objectFit: 'contain',
-                        borderRadius: '5px',
-                    }}
-                />
-            ),
-        },
-        {
-            title: 'Actions',
-            key: 'actions',
-            render: (_, record) => (
-                <Space size="middle">
-                    <Tooltip title="Edit">
-                        <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                        <Button danger type="link" icon={<DeleteOutlined />} onClick={() => handleDelete(record.product_id)} />
-                    </Tooltip>
-                </Space>
-            ),
-            width: 120,
-        },
-    ];
+  const handleParentCategoryChange = (parentId) => {
+    setSubCategories(categories.filter((cat) => cat.parent_id === parentId));
+    form.setFieldsValue({ category_id: null });
+  };
 
-    return (
-        <div>
-            <Navbar title="Products" buttonText="Add Product" onAddCategory={handleAdd} />
-            <Table
-                dataSource={products.filter(product =>
-                    product.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                    product.description.toLowerCase().includes(searchText.toLowerCase())
-                )}
-                columns={columns}
-                rowKey="product_id"
-                pagination={{
-                    current: pagination.current,
-                    pageSize: pagination.pageSize,
-                    onChange: (page, pageSize) => setPagination({ current: page, pageSize }),
-                }}
-            />
-<Modal
-    title={editingProduct ? 'Edit Product' : 'Add Product'}
-    visible={isModalVisible}
-    onOk={handleOk}
-    onCancel={handleCancel}
->
-    <Form form={form} layout="vertical">
-        <Form.Item name="name" label="Name" rules={[{ required: true }]}>
-            <Input />
-        </Form.Item>
-        <Form.Item name="description" label="Description">
-            <Input.TextArea />
-        </Form.Item>
-        <Form.Item name="price" label="Price" rules={[{ required: true }]}>
-            <Input />
-        </Form.Item>
-        <Form.Item name="type" label="Type" rules={[{ required: true }]}>
-            <Input />
-        </Form.Item>
-        <Form.Item label="Image">
-    <Upload
-        listType={file.length > 0 ? 'picture-card' : 'text'}
-        fileList={file}
-        onChange={handleUploadChange}
-        beforeUpload={(selectedFile) => {
-            setFile([{
-                uid: '-1',
-                name: selectedFile.name,
-                status: 'done',
-                url: URL.createObjectURL(selectedFile),
-                originFileObj: selectedFile,
-            }]);
-            return false; // Prevenir el autoupload
+  const columns = [
+  {
+    title: <span style={{ fontWeight: "bold", color: "#4b6cb7" }}>No.</span>,
+    key: "index",
+    render: (_, __, index) =>
+      (pagination.current - 1) * pagination.pageSize + index + 1,
+    width: 60,
+    align: "center",
+    style: { background: "#f0f7ff" },
+  },
+  {
+    title: (
+      <span style={{ fontWeight: "bold", color: "#4b6cb7" }}>Product Name</span>
+    ),
+    dataIndex: "name",
+    key: "name",
+    ellipsis: true,
+    width: 300,
+    render: (text) => (
+      <span
+        style={{
+          fontWeight: "500",
+          fontSize: "14px",
+          color: "#3a3a3a",
         }}
-        onRemove={() => setFile([])} // Asegúrate de que el archivo se elimine al removerlo
+      >
+        {text}
+      </span>
+    ),
+  },
+  {
+    title: (
+      <span style={{ fontWeight: "bold", color: "#4b6cb7" }}>Image</span>
+    ),
+    key: "image",
+    width: 80,
+    render: (text, record) => {
+      const firstAdditionalImage =
+        record.product_images && record.product_images.length > 0
+          ? record.product_images[0].image_path
+          : null;
+
+      return (
+        <Image
+          width={50}
+          height={50}
+          src={
+            firstAdditionalImage
+              ? `https://washintonbackend.store/${firstAdditionalImage}`
+              : "https://via.placeholder.com/50"
+          }
+          preview={{
+            src: firstAdditionalImage
+              ? `https://washintonbackend.store/${firstAdditionalImage}`
+              : "https://via.placeholder.com/800",
+            title: record.name,
+          }}
+          style={{
+            cursor: "pointer",
+            objectFit: "contain",
+            borderRadius: "5px",
+            border: "1px solid #d1d1d1",
+            boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+          }}
+        />
+      );
+    },
+  },
+  {
+    title: (
+      <span style={{ fontWeight: "bold", color: "#4b6cb7" }}>Images</span>
+    ),
+    key: "multipleImages",
+    width: 130,
+    render: (_, record) => (
+<Button
+  icon={<PictureOutlined />}
+  onClick={() => handleOpenImageModal(record.product_id)}
+  style={{
+    background: "#356CA0",
+    color: "#ffffff",
+    fontWeight: "bold",
+    border: "none",
+    borderRadius: "5px",
+    transition: "all 0.3s ease", // Añade una transición suave
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.background = "#274D73"; // Cambia el fondo al pasar el cursor
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.background = "#356CA0"; // Vuelve al color original
+  }}
+>
+  Images
+</Button>
+
+    ),
+  },
+  {
+    title: <span style={{ fontWeight: "bold", color: "#4b6cb7" }}>Status</span>,
+    dataIndex: "status",
+    key: "status",
+    render: (text) => (
+      <Tag
+        color={text === "active" ? "green" : "red"}
+        style={{
+          fontSize: "14px",
+          padding: "4px 10px",
+          borderRadius: "5px",
+        }}
+      >
+        {text === "active" ? "Active" : "Inactive"}
+      </Tag>
+    ),
+    width: 90,
+  },
+  {
+    title: <span style={{ fontWeight: "bold", color: "#4b6cb7" }}>Brand</span>,
+    dataIndex: "brand",
+    key: "brand",
+    ellipsis: true,
+    render: (text) => (
+      <Tag
+        color="geekblue"
+        style={{ fontSize: "14px", padding: "4px 10px", borderRadius: "5px" }}
+      >
+        {text}
+      </Tag>
+    ),
+    width: 150,
+  },
+  {
+    title: (
+      <span style={{ fontWeight: "bold", color: "#4b6cb7" }}>Measure</span>
+    ),
+    key: "quantity",
+    render: (text, record) => {
+      const { volume, unit } = record;
+      return volume && unit ? (
+        <Tag
+          color="volcano"
+          style={{
+            fontSize: "14px",
+            padding: "4px 10px",
+            borderRadius: "5px",
+          }}
+        >
+          {`${volume}${unit}`}
+        </Tag>
+      ) : (
+        <Tag
+          color="default"
+          style={{
+            fontSize: "14px",
+            padding: "4px 10px",
+            borderRadius: "5px",
+          }}
+        >
+          N/A
+        </Tag>
+      );
+    },
+    width: 100,
+  },
+  {
+    title: <span style={{ fontWeight: "bold", color: "#4b6cb7" }}>SKU</span>,
+    dataIndex: "sku",
+    key: "sku",
+    ellipsis: true,
+    render: (text, record) => (
+      <Tag
+        color="orange"
+        style={{ fontSize: "14px", padding: "4px 10px", borderRadius: "5px" }}
+      >
+        {record.sku}
+      </Tag>
+    ),
+    width: 130,
+  },
+  {
+    title: <span style={{ fontWeight: "bold", color: "#4b6cb7" }}>Price</span>,
+    dataIndex: "price",
+    key: "price",
+    render: (text, record) => (
+      <span style={{ fontWeight: "500", fontSize: "14px", color: "#3a3a3a" }}>
+        <DollarOutlined style={{ color: "green" }} /> {record.price}
+      </span>
+    ),
+    width: 120,
+  },
+  {
+    title: (
+      <span style={{ fontWeight: "bold", color: "#4b6cb7" }}>Category</span>
+    ),
+    key: "category",
+    render: (text, record) => {
+      const category = categories.find(
+        (cat) => cat.category_id === record.category_id
+      );
+      return (
+        <Tag
+          color="purple"
+          style={{ fontSize: "14px", padding: "4px 10px", borderRadius: "5px" }}
+        >
+          {category ? category.name : "Unknown Category"}
+        </Tag>
+      );
+    },
+    width: 220,
+  },
+  {
+    title: <span style={{ fontWeight: "bold", color: "#4b6cb7" }}>Type</span>,
+    dataIndex: "type",
+    key: "type",
+    render: (text) => (
+      <Tag
+        color="blue"
+        style={{ fontSize: "14px", padding: "4px 10px", borderRadius: "5px" }}
+      >
+        {text}
+      </Tag>
+    ),
+    width: 100,
+  },
+  {
+    title: (
+      <span style={{ fontWeight: "bold", color: "#4b6cb7" }}>Actions</span>
+    ),
+    key: "actions",
+    render: (_, record) => (
+      <Space size="middle">
+        <Tooltip title="Quick Edit">
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleQuickEdit(record)}
+          />
+        </Tooltip>
+        <Tooltip title="Delete">
+          <Button
+            danger
+            type="link"
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record.product_id)}
+          />
+        </Tooltip>
+      </Space>
+    ),
+    width: 120,
+  },
+];
+
+
+  return (
+    <div>
+      <Navbar
+        title="Products"
+        buttonText="Add Product"
+        onAddCategory={handleAdd}
+      />
+      <div
+      style={{
+        padding: "20px",
+        background: "#f9f9f9",
+        borderRadius: "10px",
+        boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+        overflowX: "auto", // Habilita el desplazamiento horizontal
+        marginBottom: "20px",
+      }}
     >
-        {file.length === 0 && <Button icon={<UploadOutlined />}>Select Image</Button>}
-    </Upload>
-</Form.Item>
-
-
-        <Form.Item name="status" label="Status" rules={[{ required: true }]}>
-            <Select>
-                <Option value="active">Active</Option>
-                <Option value="inactive">Inactive</Option>
-            </Select>
-        </Form.Item>
-        <Form.Item label="Category" name="parentCategory" rules={[{ required: true, message: 'Please select a category' }]}>
-            <Select placeholder="Select parent category" onChange={handleParentCategoryChange}>
-                {parentCategories.map(category => (
-                    <Option key={category.category_id} value={category.category_id}>
-                        {category.name}
-                    </Option>
-                ))}
-            </Select>
-        </Form.Item>
-        <Form.Item name="category_id" label="Subcategory" rules={[{ required: true, message: 'Please select a subcategory' }]}>
-            <Select placeholder="Select subcategory">
-                {subCategories.map(subCategory => (
-                    <Option key={subCategory.category_id} value={subCategory.category_id}>
-                        {subCategory.name}
-                    </Option>
-                ))}
-            </Select>
-        </Form.Item>
-        <Form.Item name="supplier_id" label="Supplier" rules={[{ required: true }]}>
-            <Select showSearch placeholder="Select a supplier">
-                {suppliers.map(supplier => (
-                    <Option key={supplier.supplier_id} value={supplier.supplier_id}>
-                        {supplier.name}
-                    </Option>
-                ))}
-            </Select>
-        </Form.Item>
-    </Form>
+      <Table
+        dataSource={products.filter(
+          (product) =>
+            product.name.toLowerCase().includes(searchText.toLowerCase()) ||
+            product.description.toLowerCase().includes(searchText.toLowerCase())
+        )}
+        columns={columns}
+        rowKey="product_id"
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          onChange: (page, pageSize) =>
+            setPagination({ current: page, pageSize }),
+        }}
+      />
+      </div>
+      <Modal
+  title={
+    <div
+      style={{
+        fontSize: "24px",
+        fontWeight: "bold",
+        textAlign: "center",
+        color: "#ffffff",
+        padding: "10px 0",
+        background: "linear-gradient(90deg, #4b6cb7 0%, #182848 100%)",
+        borderRadius: "10px",
+        boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
+      }}
+    >
+      Add Product
+    </div>
+  }
+  visible={isModalVisible}
+  onOk={handleOk}
+  onCancel={handleCancelAdd}
+  centered
+  style={{
+    borderRadius: "20px",
+    overflow: "hidden",
+    background: "#f5f7fa",
+    boxShadow: "0px 8px 15px rgba(0, 0, 0, 0.1)",
+  }}
+>
+  <Form
+    form={form}
+    layout="vertical"
+    style={{
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "20px",
+      justifyContent: "center",
+      alignItems: "center",
+    }}
+  >
+    <Form.Item
+      name="name"
+      label={<span style={{ fontWeight: "bold", fontSize: "16px" }}>Name</span>}
+      rules={[{ required: true }]}
+      style={{ flex: "1 1 45%" }}
+    >
+      <Input
+        placeholder="Enter product name"
+        style={{
+          padding: "10px",
+          borderRadius: "8px",
+          border: "1px solid #d1d1d1",
+          boxShadow: "inset 0px 2px 4px rgba(0, 0, 0, 0.1)",
+        }}
+      />
+    </Form.Item>
+    <Form.Item
+      name="description"
+      label={
+        <span style={{ fontWeight: "bold", fontSize: "16px" }}>Description</span>
+      }
+      style={{ flex: "1 1 45%" }}
+    >
+      <Input.TextArea
+        placeholder="Enter product description"
+        rows={4}
+        style={{
+          padding: "10px",
+          borderRadius: "8px",
+          border: "1px solid #d1d1d1",
+          boxShadow: "inset 0px 2px 4px rgba(0, 0, 0, 0.1)",
+        }}
+      />
+    </Form.Item>
+    <Form.Item
+      name="price"
+      label={<span style={{ fontWeight: "bold", fontSize: "16px" }}>Price</span>}
+      rules={[{ required: true }]}
+      style={{ flex: "1 1 30%" }}
+    >
+      <Input
+        type="number"
+        min={0}
+        step={0.01}
+        placeholder="Enter price"
+        style={{
+          padding: "10px",
+          borderRadius: "8px",
+          border: "1px solid #d1d1d1",
+          boxShadow: "inset 0px 2px 4px rgba(0, 0, 0, 0.1)",
+        }}
+      />
+    </Form.Item>
+    <Form.Item
+      name="brand"
+      label={<span style={{ fontWeight: "bold", fontSize: "16px" }}>Brand</span>}
+      rules={[{ required: true }]}
+      style={{ flex: "1 1 30%" }}
+    >
+      <Input
+        placeholder="Enter brand name"
+        style={{
+          padding: "10px",
+          borderRadius: "8px",
+          border: "1px solid #d1d1d1",
+          boxShadow: "inset 0px 2px 4px rgba(0, 0, 0, 0.1)",
+        }}
+      />
+    </Form.Item>
+    <Form.Item
+      name="volume"
+      label={
+        <span style={{ fontWeight: "bold", fontSize: "16px" }}>Volume</span>
+      }
+      style={{ flex: "1 1 30%" }}
+    >
+      <Input
+        type="number"
+        min={0}
+        step={0.01}
+        placeholder="Enter volume"
+        style={{
+          padding: "10px",
+          borderRadius: "8px",
+          border: "1px solid #d1d1d1",
+          boxShadow: "inset 0px 2px 4px rgba(0, 0, 0, 0.1)",
+        }}
+      />
+    </Form.Item>
+    <Form.Item
+      name="unit"
+      label={<span style={{ fontWeight: "bold", fontSize: "16px" }}>Unit</span>}
+      style={{ flex: "1 1 30%" }}
+    >
+      <Select
+        placeholder="Select a unit"
+        style={{
+          padding: "2px",
+          borderRadius: "8px",
+          border: "1px solid #d1d1d1",
+        }}
+      >
+        {unitOptions.map((option) => (
+          <Option key={option.value} value={option.value}>
+            {option.label}
+          </Option>
+        ))}
+      </Select>
+    </Form.Item>
+    <Form.Item
+      name="type"
+      label={<span style={{ fontWeight: "bold", fontSize: "16px" }}>Type</span>}
+      rules={[{ required: true }]}
+      style={{ flex: "1 1 30%" }}
+    >
+      <Select
+        placeholder="Select a type"
+        style={{
+          padding: "2px",
+          borderRadius: "8px",
+          border: "1px solid #d1d1d1",
+        }}
+      >
+        {typeOptions.map((type) => (
+          <Option key={type} value={type}>
+            {type}
+          </Option>
+        ))}
+      </Select>
+    </Form.Item>
+    <Form.Item
+      label={
+        <span style={{ fontWeight: "bold", fontSize: "16px" }}>
+          Additional Images
+        </span>
+      }
+      style={{ flex: "1 1 45%" }}
+    >
+      <Upload
+        listType="picture"
+        multiple
+        beforeUpload={() => false}
+        onChange={({ fileList }) => setNewImages(fileList)}
+        fileList={newImages}
+        accept="image/*"
+      >
+        <Button
+          icon={<UploadOutlined />}
+          style={{
+            background: "#4b6cb7",
+            color: "#ffffff",
+            fontWeight: "bold",
+            borderRadius: "5px",
+          }}
+        >
+          Upload Images
+        </Button>
+      </Upload>
+    </Form.Item>
+    <Form.Item
+      name="status"
+      label={
+        <span style={{ fontWeight: "bold", fontSize: "16px" }}>Status</span>
+      }
+      rules={[{ required: true }]}
+      style={{ flex: "1 1 30%" }}
+    >
+      <Select
+        placeholder="Select status"
+        style={{
+          padding: "2px",
+          borderRadius: "8px",
+          border: "1px solid #d1d1d1",
+        }}
+      >
+        <Option value="active">Active</Option>
+        <Option value="inactive">Inactive</Option>
+      </Select>
+    </Form.Item>
+    <Form.Item
+      name="parentCategory"
+      label={
+        <span style={{ fontWeight: "bold", fontSize: "16px" }}>Category</span>
+      }
+      rules={[{ required: true, message: "Please select a category" }]}
+      style={{ flex: "1 1 45%" }}
+    >
+      <Select
+        placeholder="Select parent category"
+        onChange={handleParentCategoryChange}
+        style={{
+          padding: "2px",
+          borderRadius: "8px",
+          border: "1px solid #d1d1d1",
+        }}
+      >
+        {parentCategories.map((category) => (
+          <Option key={category.category_id} value={category.category_id}>
+            {category.name}
+          </Option>
+        ))}
+      </Select>
+    </Form.Item>
+    <Form.Item
+      name="category_id"
+      label={
+        <span style={{ fontWeight: "bold", fontSize: "16px" }}>Subcategory</span>
+      }
+      rules={[{ required: true, message: "Please select a subcategory" }]}
+      style={{ flex: "1 1 45%" }}
+    >
+      <Select
+        placeholder="Select subcategory"
+        style={{
+          padding: "2px",
+          borderRadius: "8px",
+          border: "1px solid #d1d1d1",
+        }}
+      >
+        {subCategories.map((subCategory) => (
+          <Option
+            key={subCategory.category_id}
+            value={subCategory.category_id}
+          >
+            {subCategory.name}
+          </Option>
+        ))}
+      </Select>
+    </Form.Item>
+    <Form.Item
+      name="supplier_id"
+      label={
+        <span style={{ fontWeight: "bold", fontSize: "16px" }}>Supplier</span>
+      }
+      rules={[{ required: true }]}
+      style={{ flex: "1 1 45%" }}
+    >
+      <Select
+        showSearch
+        placeholder="Select a supplier"
+        style={{
+          padding: "2px",
+          borderRadius: "8px",
+          border: "1px solid #d1d1d1",
+        }}
+      >
+        {suppliers.map((supplier) => (
+          <Option key={supplier.supplier_id} value={supplier.supplier_id}>
+            {supplier.name}
+          </Option>
+        ))}
+      </Select>
+    </Form.Item>
+  </Form>
 </Modal>
 
+      <Modal
+  title={
+    <div
+      style={{
+        fontSize: "24px",
+        fontWeight: "bold",
+        textAlign: "center",
+        color: "#ffffff",
+        padding: "10px 0",
+        background: "linear-gradient(90deg, #4b6cb7 0%, #182848 100%)",
+        borderRadius: "10px",
+        boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
+      }}
+    >
+      {selectedProductId
+        ? `${products.find(
+            (product) => product.product_id === selectedProductId
+          )?.name || "Unknown Product"}`
+        : "Images"}
+    </div>
+  }
+  visible={isImageModalVisible}
+  onCancel={handleImageModalClose}
+  footer={null}
+  centered
+  style={{
+    borderRadius: "20px",
+    overflow: "hidden",
+  }}
+
+>
+  <div style={{ textAlign: "center" }}>
+    
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "15px",
+        justifyContent: "center",
+      }}
+    >
+      {productImages.map((image) => (
+        <div
+          key={image.id}
+          style={{
+            background: "#ffffff",
+            padding: "10px",
+            borderRadius: "10px",
+            boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+            transition: "transform 0.3s ease, box-shadow 0.3s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "scale(1.05)";
+            e.currentTarget.style.boxShadow =
+              "0px 6px 12px rgba(0, 0, 0, 0.2)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "scale(1)";
+            e.currentTarget.style.boxShadow =
+              "0px 4px 6px rgba(0, 0, 0, 0.1)";
+          }}
+        >
+          <Image
+            width={120}
+            height={120}
+            src={`https://washintonbackend.store/${image.image_path}`}
+            fallback="https://via.placeholder.com/120"
+            style={{
+              borderRadius: "10px",
+              objectFit: "cover",
+              boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
+            }}
+          />
+          <Button
+            danger
+            onClick={() => handleDeleteImage(image.id)}
+            style={{
+              marginTop: "10px",
+              display: "block",
+              width: "100%",
+              borderRadius: "5px",
+              fontWeight: "bold",
+            }}
+          >
+            Delete
+          </Button>
         </div>
-    );
-    
-    
+      ))}
+    </div>
+    <div
+      style={{
+        marginTop: "30px",
+        padding: "20px",
+        background: "#ffffff",
+        borderRadius: "10px",
+        boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+        textAlign: "center",
+      }}
+    >
+      <Upload
+        listType="picture"
+        multiple
+        beforeUpload={() => false}
+        onChange={handleImageUpload}
+        fileList={newImages}
+      >
+        <Button
+          icon={<UploadOutlined />}
+          style={{
+            background: "#4b6cb7",
+            color: "#ffffff",
+            fontWeight: "bold",
+            border: "none",
+            borderRadius: "5px",
+          }}
+        >
+          Upload Images
+        </Button>
+      </Upload>
+      <Button
+        type="primary"
+        onClick={handleAddImages}
+        disabled={newImages.length === 0} // Botón habilitado solo si hay imágenes
+        style={{
+          marginTop: "20px",
+          width: "100%",
+          padding: "10px 0",
+          borderRadius: "5px",
+          fontWeight: "bold",
+          background: newImages.length > 0
+            ? "linear-gradient(90deg, #4b6cb7 0%, #182848 100%)"
+            : "#ccc",
+          border: "none",
+          cursor: newImages.length > 0 ? "pointer" : "not-allowed",
+        }}
+      >
+        Save Images
+      </Button>
+    </div>
+  </div>
+</Modal>
+
+<Modal
+  title="Quick Edit"
+  visible={isEditModalVisible}
+  onOk={async () => {
+    try {
+      // Valida los campos del formulario
+      const values = await form.validateFields();
+
+      // Construye el objeto para enviar a la API
+      const updatedProduct = {
+        price: parseFloat(values.price),
+        status: values.status,
+      };
+
+      // Llama a la API para actualizar el producto
+      const response = await fetch(`${API_URL_PRODUCTS}${editingProduct.product_id}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedProduct),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error updating product");
+      }
+
+      notification.success({
+        message: "Product updated successfully",
+      });
+
+      // Recarga la lista de productos
+      fetchProducts();
+      setIsEditModalVisible(false); // Cierra el modal
+    } catch (error) {
+      notification.error({
+        message: error.message || "Error updating product",
+      });
+    }
+  }}
+  onCancel={handleCancelEdit}
+>
+  <Form
+    form={form}
+    layout="vertical"
+    initialValues={{
+      price: editingProduct?.price || "",
+      status: editingProduct?.status || "active",
+    }}
+  >
+    <Form.Item
+      name="price"
+      label="Price"
+      rules={[
+        { required: true, message: "Please enter the price" },
+      ]}
+    >
+      <Input
+        type="number"
+        placeholder="Enter product price"
+        min={0}
+        step={0.01}
+        style={{
+          padding: "10px",
+          borderRadius: "8px",
+          border: "1px solid #d1d1d1",
+          boxShadow: "inset 0px 2px 4px rgba(0, 0, 0, 0.1)",
+        }}
+      />
+    </Form.Item>
+    <Form.Item
+      name="status"
+      label="Status"
+      rules={[{ required: true, message: "Please select the status" }]}
+    >
+      <Select
+        placeholder="Select status"
+        style={{
+          padding: "2px",
+          borderRadius: "8px",
+          border: "1px solid #d1d1d1",
+        }}
+      >
+        <Option value="active">Active</Option>
+        <Option value="inactive">Inactive</Option>
+      </Select>
+    </Form.Item>
+  </Form>
+</Modal>
+
+
+            
+
+    </div>
+  );
 };
 
 export default ProductPage;

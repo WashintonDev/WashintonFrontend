@@ -71,7 +71,7 @@ const SuppliersTable = () => {
 
   const handleSaveEdit = async (values) => {
     try {
-      await putData(`${API_URL_SUPPLIERS}/${editingSupplier.supplier_id}`, values);
+      await putData(`${API_URL_SUPPLIERS}${editingSupplier.supplier_id}`, values);
       message.success('Supplier updated successfully!');
       setIsEditModalVisible(false);
       reloadSuppliers();
@@ -102,7 +102,7 @@ const SuppliersTable = () => {
       cancelText: 'Cancel',
       onOk: async () => {
         try {
-          const response = await fetch(`${API_URL_SUPPLIERS}/${supplier_id}`, {
+          const response = await fetch(`${API_URL_SUPPLIERS}${supplier_id}`, {
             method: 'DELETE',
           });
           if (response.ok) {

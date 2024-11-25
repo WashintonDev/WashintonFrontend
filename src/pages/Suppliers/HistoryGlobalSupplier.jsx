@@ -1,5 +1,5 @@
 import { Image, Table, Tag, notification } from "antd";
-import useSupplierGlobalHistory from "../../hooks/useSupplierGlobalHistory";
+import useSupplierGlobalHistory from "../../hooks/UseSupplierGlobalHistory";
 import Navbar from "../../components/Navbar";
 import { useEffect, useState } from "react";
 import TableSkeleton from "../../components/CardSkeleton/CardSkeleton";

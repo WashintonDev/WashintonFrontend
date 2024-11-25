@@ -1,7 +1,7 @@
 // src/pages/Suppliers/Suppliers.jsx
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import SuppliersTable from './suppliersTable';
+import SuppliersTable from './SuppliersTable';
 import RestockProductsPage from './RestockProductsPage';
 import HistorySupplier from './HistorySupplier';
 import HistoryGlobalSupplier from './HistoryGlobalSupplier';
