@@ -1,3 +1,4 @@
+import { useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -10,8 +11,15 @@ import Navbar from "../../components/Navbar";
 const CalendarDispatch = () => {
   const { events, loading, error } = useWarehouseTransfers();
 
+  // Estado del modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const handleEventClick = (info) => {
     alert(`Evento: ${info.event.title}`);
+  };
+
+  const toggleModal = () => {
+    setIsModalOpen((prev) => !prev);
   };
 
   if (loading) return <CalendarSkeleton />;
@@ -49,10 +57,25 @@ const CalendarDispatch = () => {
             } else if (arg.event.extendedProps.status === "cancelled") {
               return "event-cancelled";
             }
-            return "";
+            return "not-event";
           }}
         />
+        {/* Botón flotante */}
+        <button className="floating-button" onClick={toggleModal}>
+          +
+        </button>
       </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={toggleModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>Nuevo Evento</h3>
+            <p>Aquí puedes agregar detalles para un nuevo evento.</p>
+            <button onClick={toggleModal}>Cerrar</button>
+          </div>
+        </div>
+      )}
     </>
   );
 };
