@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { Dropdown, Menu, Button, Input, Badge, Layout } from 'antd';
+import { Dropdown, Menu, Button, Input, Layout } from 'antd';
 import {
     UserOutlined, LogoutOutlined, FundProjectionScreenOutlined, SolutionOutlined,
     FormOutlined, ShoppingOutlined, MenuFoldOutlined, ExclamationCircleOutlined,
     TruckOutlined, FundOutlined
 } from '@ant-design/icons';
-import { signOut } from "firebase/auth";
-import { auth } from '../services/firebaseConfig';
 import { Link, useNavigate } from "react-router-dom";
+import useLogout from '../hooks/Logout';
 import "../assets/styles/login.css";
 
 const { Sider } = Layout;
@@ -15,22 +14,12 @@ const { Sider } = Layout;
 const NavBarHome = ({ onSearch, showSearch = true }) => {
     const [collapsed, setCollapsed] = useState(true); 
     const navigate = useNavigate();
+    const logout = useLogout();
 
     // Función de logout
-    const handleLogout = async () => {
-        try {
-            await signOut(auth);
-            localStorage.removeItem("user");
-            navigate('/login');
-        } catch (error) {
-            console.error('Error logging out', error);
-        }
-    };
-
-    // Menú de configuración
     const settingsMenu = (
         <Menu>
-            <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
+            <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={logout}>
                 Log Out
             </Menu.Item>
         </Menu>
@@ -54,7 +43,7 @@ const NavBarHome = ({ onSearch, showSearch = true }) => {
                     expandIcon={null}
                 >
                     <Menu.Item key="dashboard" icon={<FundProjectionScreenOutlined />}>
-                        <Link to="/dashboard">Dashboard</Link>
+                        <Link to="/admin">Dashboard</Link>
                     </Menu.Item>
 
                     <Menu.Item key="orders" icon={<SolutionOutlined />}>

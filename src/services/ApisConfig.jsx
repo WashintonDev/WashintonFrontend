@@ -1,5 +1,5 @@
 
-const BASE_API_URL = import.meta.env.VITE_API_URL;
+export const BASE_API_URL = import.meta.env.VITE_API_URL;
 const BASE_API_URL_TESTING = 'http://0.0.0.0:8000/api/'
 
 // Product Images API URLs

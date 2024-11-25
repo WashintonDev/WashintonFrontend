@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Form, Input, Button, Checkbox, Typography, Divider, Space, message } from "antd";
 import { MailOutlined, LockOutlined } from "@ant-design/icons";
-import { auth } from "../../services/firebaseConfig"; // Asegúrate de tener la configuración de Firebase correctamente importada
+import { auth } from "../../services/firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import "../../assets/styles/login.css";
+import { saveToken } from "../../services/authUtil";
 import googleIcon from "../../assets/images/google.png";
+import fetchUserRole from "../../services/fetchUserRole";
 
 const { Title, Text, Link } = Typography;
 
@@ -15,15 +17,30 @@ const Login = () => {
     const { email, password } = values;
     try {
       setLoading(true);
-      // Iniciar sesión con Firebase Authentication
-      await signInWithEmailAndPassword(auth, email, password);
-      
-      message.success("Login Succesfully");
-      localStorage.setItem("user", email); 
-      // Redirigir a la página principal u otra página
-      window.location.href = "/"; 
+
+      // Iniciar sesión con Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+      const token = await userCredential.user.getIdToken();
+      const firebaseUserID = userCredential.user.uid; // Obtener el ID de Firebase
+
+      // Guardar el token en localStorage
+      saveToken(token);
+      localStorage.setItem("user", email);
+
+      // Obtener el rol desde el backend
+      const role = await fetchUserRole(firebaseUserID);
+
+      if (role) {
+        localStorage.setItem("role", role);
+        message.success("Login Successfully");
+        window.location.href = "/";
+      } else {
+        throw new Error("No se pudo obtener el rol");
+      }
     } catch (error) {
-      message.error("Credenciales incorrectas");
+      console.error(error);
+      message.error("Credenciales incorrectas o error al obtener rol");
     } finally {
       setLoading(false);
     }
@@ -42,6 +59,10 @@ const Login = () => {
             <Input
               prefix={<MailOutlined />}
               placeholder="Email Address"
+              rules={[
+                { required: true, message: "Please enter your email" },
+                { type: "email", message: "Please enter a valid email address" },
+              ]}              
               size="large"
             />
           </Form.Item>
