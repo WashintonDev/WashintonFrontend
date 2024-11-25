@@ -406,7 +406,7 @@ const handleQuantityChange = (productId, quantity) => {
             key: 'image',
             render: (text, record) => (
                 <Image
-                    width={50}
+                    width={125}
                     src={record.image || 'https://via.placeholder.com/50'}
                     style={{ cursor: 'pointer' }}
                 />
