@@ -10,7 +10,11 @@ import {
   message,
   Spin,
   notification,
+  Row,
+  Col,
+  Tooltip,
 } from "antd";
+import { CheckCircleOutlined, SyncOutlined, ClockCircleOutlined, CarOutlined } from '@ant-design/icons';
 import Navbar from '../../components/Navbar';
 import axios from "axios";
 import {
@@ -124,6 +128,17 @@ const StoreTransferPage = () => {
     }
   };
 
+  // Handle status change
+  const handleStatusChange = async (transferId, status) => {
+    try {
+      await axios.patch(`${API_URL_STORE_TRANSFER}/${transferId}`, { status });
+      message.success("Status updated successfully");
+      fetchStoreTransfers();
+    } catch (error) {
+      message.error("Error updating status");
+    }
+  };
+
   // Fetch data on mount
   useEffect(() => {
     fetchStoreTransfers();
@@ -136,7 +151,23 @@ const StoreTransferPage = () => {
   const columns = [
     { title: "ID", dataIndex: "store_transfer_id", key: "store_transfer_id" },
     { title: "Name", dataIndex: "store_transfer_name", key: "store_transfer_name" },
-    { title: "Status", dataIndex: "status", key: "status" },
+    { title: "Status", dataIndex: "status", key: "status", render: (status, record) => (
+      <Select
+        value={status}
+        onChange={(value) => handleStatusChange(record.store_transfer_id, value)}
+        style={{ width: 50 }}
+      >
+        <Option value="pending">
+        <ClockCircleOutlined style={{ fontSize: '18px', color: '#faad14' }} />
+        </Option>
+        <Option value="delivering">
+          <CarOutlined style={{ fontSize: '18px', color: '#1890ff' }} />
+        </Option>
+        <Option value="delivered">
+          <CheckCircleOutlined style={{ fontSize: '18px', color: '#52c41a' }} />
+        </Option>
+      </Select>
+    ) },
     { title: "Requested At", dataIndex: "requested_at", key: "requested_at" },
     { title: "Created At", dataIndex: "created_at", key: "created_at" },
     {
@@ -170,6 +201,26 @@ const StoreTransferPage = () => {
       <Button type="primary" onClick={() => setIsModalVisible(true)}>
         Create New Transfer
       </Button>
+
+      {/* Legend */}
+      <Row style={{ marginTop: 20 }} justify="center">
+        <Col span={8} style={{ textAlign: 'center' }}>
+          <Tooltip title="Pending">
+            <ClockCircleOutlined style={{ fontSize: '24px', color: '#faad14' }} />
+          </Tooltip>
+        </Col>
+        <Col span={8} style={{ textAlign: 'center' }}>
+          <Tooltip title="Delivering">
+            <CarOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
+          </Tooltip>
+        </Col>
+        <Col span={8} style={{ textAlign: 'center' }}>
+          <Tooltip title="Delivered">
+            <CheckCircleOutlined style={{ fontSize: '24px', color: '#52c41a' }} />
+          </Tooltip>
+        </Col>
+      </Row>
+
       <Spin spinning={tableLoading}>
         <Table
           columns={columns}
