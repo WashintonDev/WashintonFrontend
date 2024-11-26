@@ -23,3 +23,6 @@ export const API_URL_BATCH_UPDATE_STATUS = API_URL_BATCH + 'update-status/';
 export const API_URL_BATCH_BULK_UPDATE_STATUS = BASE_API_URL + 'batches/'
 export const API_URL_CREATE_BATCH = BASE_API_URL + 'create_batch';
 export const API_URL_SALES = BASE_API_URL + 'sale/';
+export const API_URL_STORE_TRANSFER = BASE_API_URL + 'store-transfers';
+export const API_URL_STORE_TRANSFER_DETAIL = BASE_API_URL + 'store-transfer-details';
+export const API_URL_CREATE_STORE_TRANSFER = BASE_API_URL + 'create-transfer';
