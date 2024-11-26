@@ -10,9 +10,9 @@ import {fetchDataTesting} from "../../services/services"
 import { API_URL_STORE_LABELS, API_URL_PRODUCT_LABELS, API_URL_TRANSPORT_ORDER, API_URL_TRANSPORT_ORDER_DETAIL } from "../../services/ApisConfig";
 import { Flex, List, Typography, InputNumber, notification, Tag, Spin, QRCode} from "antd";
 import { CloseOutlined } from '@ant-design/icons';
-import { RestTwoTone, QrcodeOutlined } from '@ant-design/icons';
+import { DollarTwoTone, QrcodeOutlined } from '@ant-design/icons';
 import axios from "axios";
-const { Title } = Typography;
+const { Title,Text } = Typography;
 
 
 
@@ -57,6 +57,7 @@ const OrdersPage = () => {
                 store: stores.find(store => store.value === order.store_id)?.label || "Unknown Store",
                 transfer_date: formatDate(order.transfer_date),
                 status: order.status,
+                totalValue: order.totalValue,
                 details: order.details.map(detail => ({
                     product: products.find(product => product.value === detail.product_id)?.label || "Unknown Product",
                     quantity: detail.quantity,
@@ -153,10 +154,6 @@ const OrdersPage = () => {
                     order.status !== "Delivered" // Adjust based on your 'completed' status
             );
     
-            if (activeOrder) {
-                notification.error({ message: `Store ${activeOrder.store} already has an active order.` });
-                return;
-            }
     
             if (transformedListOfProducts.length < 10) {
                 notification.error({ message: 'You must select at least 10 products to proceed.' });
@@ -248,6 +245,15 @@ const OrdersPage = () => {
                 } else if (text === 'Delivering') {
                      color = 'yellow'; 
                     } else { color = 'green'; } return <Tag color={color}>{text}</Tag>; }},
+
+        {
+            title: 'Worth',
+            key: 'worth',
+            dataIndex: 'totalValue',
+            width: 80,
+            align: 'center',
+            render: (text) => { return <Text><DollarTwoTone twoToneColor="#32CD32"/> {text}</Text>}
+        },
         {
             title: 'Details',
             key: 'details',
@@ -285,7 +291,8 @@ const OrdersPage = () => {
             key: 'price',
             dataIndex: 'price',
             width: 50,
-            align: 'center'
+            align: 'center',
+            render: (text) => {return <Text><DollarTwoTone twoToneColor='#32CD32'/> {text}</Text>}
         }
     ];
     
@@ -401,7 +408,7 @@ const OrdersPage = () => {
                     columns={productColumns}
                     dataSource={selectedOrder}
                     style = {{padding: 20}}
-                    pagination={{ pageSize: 5 }}
+                    pagination={5}
                     />
 
             </Modal>   
