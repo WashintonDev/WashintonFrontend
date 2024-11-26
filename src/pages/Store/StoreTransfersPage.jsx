@@ -1,13 +1,26 @@
 import React, { useState, useEffect } from "react";
-import { Table, Modal, Form, Input, Select, DatePicker, Button, message, Spin } from "antd";
+import {
+  Table,
+  Modal,
+  Form,
+  Input,
+  Select,
+  DatePicker,
+  Button,
+  message,
+  Spin,
+  notification,
+} from "antd";
+import Navbar from '../../components/Navbar';
 import axios from "axios";
 import {
   API_URL_STORE_TRANSFER,
   API_URL_PRODUCTS,
   API_URL_CREATE_STORE_TRANSFER,
   API_URL_STORES,
-  API_URL_STORE_TRANSFER_DETAIL
-} from '../../services/ApisConfig';
+  API_URL_STORE_TRANSFER_DETAIL,
+  API_URL_INVENTORIES,
+} from "../../services/ApisConfig";
 
 const { Option } = Select;
 
@@ -15,55 +28,69 @@ const StoreTransferPage = () => {
   const [transfers, setTransfers] = useState([]);
   const [products, setProducts] = useState([]);
   const [stores, setStores] = useState([]);
+  const [inventories, setInventories] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [selectedTransfer, setSelectedTransfer] = useState(null);
   const [transferDetails, setTransferDetails] = useState([]);
-  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
+  const [form] = Form.useForm();
 
-  // Fetch store transfers
-  const fetchStoreTransfers = async () => {
-    setTableLoading(true);
+  // Fetch data functions
+  const fetchData = async (url, setter, errorMessage) => {
     try {
-      const { data } = await axios.get(API_URL_STORE_TRANSFER);
-      setTransfers(data);
+      const { data } = await axios.get(url);
+      setter(data);
     } catch (error) {
-      message.error("Error fetching store transfers");
-    } finally {
-      setTableLoading(false);
+      notification.error({ message: errorMessage });
     }
   };
 
-  // Fetch products
-  const fetchProducts = async () => {
-    try {
-      const { data } = await axios.get(API_URL_PRODUCTS);
-      setProducts(data);
-    } catch (error) {
-      message.error("Error fetching products");
-    }
-  };
+  const fetchStoreTransfers = () =>
+    fetchData(
+      API_URL_STORE_TRANSFER,
+      setTransfers,
+      "Error fetching store transfers"
+    );
 
-  // Fetch stores
-  const fetchStores = async () => {
-    try {
-      const { data } = await axios.get(API_URL_STORES);
-      setStores(data);
-    } catch (error) {
-      message.error("Error fetching stores");
-    }
-  };
+  const fetchProducts = () =>
+    fetchData(API_URL_PRODUCTS, setProducts, "Error fetching products");
 
-  // Fetch transfer details
+  const fetchStores = () =>
+    fetchData(API_URL_STORES, setStores, "Error fetching stores");
+
   const fetchTransferDetails = async (transferId) => {
     try {
-      const { data } = await axios.get(`${API_URL_STORE_TRANSFER_DETAIL}?store_transfer_id=${transferId}`);
-      setTransferDetails(data);
+      const { data } = await axios.get(API_URL_STORE_TRANSFER_DETAIL);
+      const filteredData = data.filter(detail => detail.store_transfer_id === transferId);
+      setTransferDetails(filteredData);
     } catch (error) {
       message.error("Error fetching transfer details");
     }
+  };
+  
+  const fetchInventories = async () => {
+    try {
+      const { data } = await axios.get(API_URL_INVENTORIES);
+      setInventories(data);
+    } catch (error) {
+      notification.error({ message: "Error fetching inventories" });
+    }
+  };
+
+  // Calculate available stock for a product
+  const getAvailableStock = (productId) => {
+    const mainInventory = inventories.find(
+      (inv) => inv.product_id === productId && inv.warehouse_id === 1
+    );
+    const reservedStock = inventories
+      .filter((inv) => inv.product_id === productId && inv.store_id)
+      .reduce((acc, inv) => acc + inv.Reserved_Stock, 0);
+
+    return mainInventory
+      ? mainInventory.stock - mainInventory.Reserved_Stock - reservedStock
+      : 0;
   };
 
   // Handle Modal Submit
@@ -72,7 +99,7 @@ const StoreTransferPage = () => {
       store_id: values.store_id,
       store_transfer_name: values.store_transfer_name,
       status: "pending",
-      requested_at: new Date().toISOString(), // Set requested_at to current timestamp
+      requested_at: new Date().toISOString(),
       received_date: values.received_date.format("YYYY-MM-DDTHH:mm:ss"),
       details: values.details.map((detail) => ({
         product_id: detail.product_id,
@@ -89,48 +116,29 @@ const StoreTransferPage = () => {
       form.resetFields();
       fetchStoreTransfers();
     } catch (error) {
-      message.error(
-        `Error creating store transfer: ${
-          error.response?.data?.message || "Please try again"
-        }`
-      );
+      const errorMsg =
+        error.response?.data?.message || "Please try again later";
+      message.error(`Error creating store transfer: ${errorMsg}`);
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch data on mount
   useEffect(() => {
     fetchStoreTransfers();
     fetchProducts();
     fetchStores();
+    fetchInventories();
   }, []);
 
+  // Table columns
   const columns = [
-    {
-      title: "ID",
-      dataIndex: "store_transfer_id",
-      key: "store_transfer_id",
-    },
-    {
-      title: "Name",
-      dataIndex: "store_transfer_name",
-      key: "store_transfer_name",
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-    },
-    {
-      title: "Requested At",
-      dataIndex: "requested_at",
-      key: "requested_at",
-    },
-    {
-      title: "Created At",
-      dataIndex: "created_at",
-      key: "created_at",
-    },
+    { title: "ID", dataIndex: "store_transfer_id", key: "store_transfer_id" },
+    { title: "Name", dataIndex: "store_transfer_name", key: "store_transfer_name" },
+    { title: "Status", dataIndex: "status", key: "status" },
+    { title: "Requested At", dataIndex: "requested_at", key: "requested_at" },
+    { title: "Created At", dataIndex: "created_at", key: "created_at" },
     {
       title: "Actions",
       key: "actions",
@@ -150,31 +158,15 @@ const StoreTransferPage = () => {
   ];
 
   const detailColumns = [
-    {
-      title: "Product ID",
-      dataIndex: "product_id",
-      key: "product_id",
-    },
-    {
-      title: "Quantity",
-      dataIndex: "quantity",
-      key: "quantity",
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-    },
-    {
-      title: "Created At",
-      dataIndex: "created_at",
-      key: "created_at",
-    },
+    { title: "Product ID", dataIndex: "product_id", key: "product_id" },
+    { title: "Quantity", dataIndex: "quantity", key: "quantity" },
+    { title: "Status", dataIndex: "status", key: "status" },
+    { title: "Created At", dataIndex: "created_at", key: "created_at" },
   ];
 
   return (
     <div>
-      <h1>Store Transfers</h1>
+      <Navbar title="Store Transfers" showSearch={false} showAdd={false} />
       <Button type="primary" onClick={() => setIsModalVisible(true)}>
         Create New Transfer
       </Button>
@@ -188,17 +180,14 @@ const StoreTransferPage = () => {
         />
       </Spin>
 
+      {/* Create Transfer Modal */}
       <Modal
         title="Create Store Transfer"
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         footer={null}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleCreateTransfer}
-        >
+        <Form form={form} layout="vertical" onFinish={handleCreateTransfer}>
           <Form.Item
             label="Store"
             name="store_id"
@@ -216,7 +205,9 @@ const StoreTransferPage = () => {
           <Form.Item
             label="Transfer Name"
             name="store_transfer_name"
-            rules={[{ required: true, message: "Please enter the transfer name" }]}
+            rules={[
+              { required: true, message: "Please enter the transfer name" },
+            ]}
           >
             <Input />
           </Form.Item>
@@ -224,7 +215,9 @@ const StoreTransferPage = () => {
           <Form.Item
             label="Received Date"
             name="received_date"
-            rules={[{ required: true, message: "Please select the received date" }]}
+            rules={[
+              { required: true, message: "Please select the received date" },
+            ]}
           >
             <DatePicker showTime />
           </Form.Item>
@@ -232,20 +225,22 @@ const StoreTransferPage = () => {
           <Form.List name="details">
             {(fields, { add, remove }) => (
               <>
-                {fields.map(({ key, name, fieldKey, ...restField }) => (
+                {fields.map(({ key, name, ...restField }) => (
                   <div key={key} style={{ display: "flex", marginBottom: 8 }}>
                     <Form.Item
                       {...restField}
                       name={[name, "product_id"]}
-                      fieldKey={[fieldKey, "product_id"]}
-                      rules={[{ required: true, message: "Select a product" }]}
+                      rules={[
+                        { required: true, message: "Please select a product" },
+                      ]}
+                      style={{ flex: 2, marginRight: 8 }}
                     >
-                      <Select
-                        placeholder="Select Product"
-                        style={{ width: "200px" }}
-                      >
+                      <Select placeholder="Select Product">
                         {products.map((product) => (
-                          <Option key={product.id} value={product.id}>
+                          <Option
+                            key={product.product_id}
+                            value={product.product_id}
+                          >
                             {product.name}
                           </Option>
                         ))}
@@ -255,11 +250,28 @@ const StoreTransferPage = () => {
                     <Form.Item
                       {...restField}
                       name={[name, "quantity"]}
-                      fieldKey={[fieldKey, "quantity"]}
                       rules={[
                         { required: true, message: "Enter quantity" },
-                        { type: "number", min: 1, message: "Quantity must be at least 1" }
+                        {
+                          validator: (_, value, callback) => {
+                            const productId = form.getFieldValue([
+                              "details",
+                              name,
+                              "product_id",
+                            ]);
+                            const availableStock = getAvailableStock(productId);
+                            if (value > availableStock) {
+                              return Promise.reject(
+                                new Error(
+                                  `Quantity exceeds available stock (${availableStock})`
+                                )
+                              );
+                            }
+                            return Promise.resolve();
+                          },
+                        },
                       ]}
+                      style={{ flex: 1, marginRight: 8 }}
                     >
                       <Input
                         type="number"
@@ -267,17 +279,12 @@ const StoreTransferPage = () => {
                         min={1}
                       />
                     </Form.Item>
-
-                    <Button
-                      type="link"
-                      danger
-                      onClick={() => remove(name)}
-                    >
+                    <Button type="link" danger onClick={() => remove(name)}>
                       Remove
                     </Button>
                   </div>
                 ))}
-                <Button type="dashed" onClick={() => add()}>
+                <Button type="dashed" onClick={() => add()} block>
                   Add Product
                 </Button>
               </>
@@ -297,6 +304,7 @@ const StoreTransferPage = () => {
         </Form>
       </Modal>
 
+      {/* Details Modal */}
       <Modal
         title="Store Transfer Details"
         open={isDetailsModalVisible}
@@ -305,15 +313,25 @@ const StoreTransferPage = () => {
       >
         {selectedTransfer ? (
           <div>
-            <p><strong>ID:</strong> {selectedTransfer.store_transfer_id}</p>
-            <p><strong>Name:</strong> {selectedTransfer.store_transfer_name}</p>
-            <p><strong>Status:</strong> {selectedTransfer.status}</p>
-            <p><strong>Requested At:</strong> {selectedTransfer.requested_at}</p>
-            <p><strong>Created At:</strong> {selectedTransfer.created_at}</p>
+            <p>
+              <strong>ID:</strong> {selectedTransfer.store_transfer_id}
+            </p>
+            <p>
+              <strong>Name:</strong> {selectedTransfer.store_transfer_name}
+            </p>
+            <p>
+              <strong>Status:</strong> {selectedTransfer.status}
+            </p>
+            <p>
+              <strong>Requested At:</strong> {selectedTransfer.requested_at}
+            </p>
+            <p>
+              <strong>Created At:</strong> {selectedTransfer.created_at}
+            </p>
             <h3>Transfer Details:</h3>
             <Table
               columns={detailColumns}
-              dataSource={transferDetails.filter(detail => detail.store_transfer_id === selectedTransfer.store_transfer_id)}
+              dataSource={transferDetails}
               rowKey="transfer_detail_id"
               pagination={{ pageSize: 5 }}
             />
