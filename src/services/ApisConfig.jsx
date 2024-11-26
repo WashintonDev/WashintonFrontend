@@ -23,3 +23,5 @@ export const API_URL_BATCH_UPDATE_STATUS = API_URL_BATCH + 'update-status/';
 export const API_URL_BATCH_BULK_UPDATE_STATUS = BASE_API_URL + 'batches/'
 export const API_URL_CREATE_BATCH = BASE_API_URL + 'create_batch';
 export const API_URL_SALES = BASE_API_URL + 'sale/';
+export const API_URL_EMPLOYEES = BASE_API_URL + 'employee/';
+export const API_URL_ROLES = BASE_API_URL + 'role/';

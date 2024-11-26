@@ -5,6 +5,7 @@ import RoleHistoryDialog from "./RolHistory";
 import RoleManagement from "./RolManagment";
 import UserManagement from "./UserManagement";
 import Profile from "./Profile";
+import EmployeeStorePage from "../Employees/EmployeeStorePage";
 
 const Admin = () => {
     return (
@@ -15,6 +16,7 @@ const Admin = () => {
           <Route path="/roles" element={<RoleHistoryDialog />} />
           <Route path="/users" element={<UserManagement />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/employees" element={<EmployeeStorePage />} />
         </Routes>
 
       </div>

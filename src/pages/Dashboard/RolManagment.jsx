@@ -47,12 +47,12 @@ const RoleManagement = () => {
         name: '',
         description: '',
         permissions: {
-            canManageUsers: false,
-            canManageRoles: false,
-            canManageInventory: false,
-            canManageSales: false,
-            canViewReports: false,
-            canManageSuppliers: false
+            registerProducts: false,
+            manageRoles: false,
+            confirmTransfer: false,
+            manageSuppliers: false,
+            registerSales: false,
+            viewReports: false
         }
     });
     const [isEditing, setIsEditing] = useState(false);
@@ -63,38 +63,103 @@ const RoleManagement = () => {
         severity: 'success'
     });
 
+    // Actualizar los roles predefinidos
+    const predefinedRoles = [
+        {
+            id: 1,
+            name: 'Administrador',
+            description: 'Control total del sistema',
+            permissions: {
+                registerProducts: true,
+                manageRoles: true,
+                confirmTransfer: true,
+                manageSuppliers: true,
+                registerSales: true,
+                viewReports: true
+            }
+        },
+        {
+            id: 2,
+            name: 'Coordinador de Logística y Almacén',
+            description: 'Gestión de logística y almacén',
+            permissions: {
+                registerProducts: true,
+                manageRoles: false,
+                confirmTransfer: true,
+                manageSuppliers: false,
+                registerSales: false,
+                viewReports: true
+            }
+        },
+        {
+            id: 3,
+            name: 'Empleado Almacén',
+            description: 'Operaciones de almacén',
+            permissions: {
+                registerProducts: false,
+                manageRoles: false,
+                confirmTransfer: true,
+                manageSuppliers: false,
+                registerSales: false,
+                viewReports: false
+            }
+        },
+        {
+            id: 4,
+            name: 'Administrador de Suministros',
+            description: 'Gestión de suministros',
+            permissions: {
+                registerProducts: false,
+                manageRoles: false,
+                confirmTransfer: false,
+                manageSuppliers: true,
+                registerSales: false,
+                viewReports: true
+            }
+        },
+        {
+            id: 5,
+            name: 'Supervisor Ventas',
+            description: 'Supervisión de ventas',
+            permissions: {
+                registerProducts: false,
+                manageRoles: false,
+                confirmTransfer: false,
+                manageSuppliers: false,
+                registerSales: true,
+                viewReports: true
+            }
+        },
+        {
+            id: 6,
+            name: 'Empleado Básico',
+            description: 'Operaciones básicas',
+            permissions: {
+                registerProducts: false,
+                manageRoles: false,
+                confirmTransfer: false,
+                manageSuppliers: false,
+                registerSales: true,
+                viewReports: true
+            }
+        }
+    ];
+
+    // Actualizar las etiquetas de los permisos
+    const permissionLabels = {
+        registerProducts: 'Registro de productos',
+        manageRoles: 'Gestión de roles',
+        confirmTransfer: 'Confirmación de traslado',
+        manageSuppliers: 'Gestión de proveedores',
+        registerSales: 'Registro de ventas',
+        viewReports: 'Consulta de reportes'
+    };
+
     // Cargar roles iniciales
     useEffect(() => {
         setLoading(true);
         setTimeout(() => {
-            setRoles([
-                {
-                    id: 1,
-                    name: 'Administrador',
-                    description: 'Control total del sistema',
-                    permissions: {
-                        canManageUsers: true,
-                        canManageRoles: true,
-                        canManageInventory: true,
-                        canManageSales: true,
-                        canViewReports: true,
-                        canManageSuppliers: true
-                    }
-                },
-                {
-                    id: 2,
-                    name: 'Vendedor',
-                    description: 'Gestión de ventas e inventario',
-                    permissions: {
-                        canManageUsers: false,
-                        canManageRoles: false,
-                        canManageInventory: true,
-                        canManageSales: true,
-                        canViewReports: true,
-                        canManageSuppliers: false
-                    }
-                }
-            ]);
+            setRoles(predefinedRoles);
             setLoading(false);
         }, 1000);
     }, []);
@@ -136,12 +201,12 @@ const RoleManagement = () => {
                 name: '',
                 description: '',
                 permissions: {
-                    canManageUsers: false,
-                    canManageRoles: false,
-                    canManageInventory: false,
-                    canManageSales: false,
-                    canViewReports: false,
-                    canManageSuppliers: false
+                    registerProducts: false,
+                    manageRoles: false,
+                    confirmTransfer: false,
+                    manageSuppliers: false,
+                    registerSales: false,
+                    viewReports: false
                 }
             });
             setIsEditing(false);
@@ -155,12 +220,12 @@ const RoleManagement = () => {
             name: '',
             description: '',
             permissions: {
-                canManageUsers: false,
-                canManageRoles: false,
-                canManageInventory: false,
-                canManageSales: false,
-                canViewReports: false,
-                canManageSuppliers: false
+                registerProducts: false,
+                manageRoles: false,
+                confirmTransfer: false,
+                manageSuppliers: false,
+                registerSales: false,
+                viewReports: false
             }
         });
         setIsEditing(false);
@@ -315,7 +380,7 @@ const RoleManagement = () => {
                                                 value && (
                                                     <Chip
                                                         key={key}
-                                                        label={key.replace('can', '').replace(/([A-Z])/g, ' $1').trim()}
+                                                        label={permissionLabels[key]}
                                                         size="small"
                                                         color="primary"
                                                         variant="outlined"
@@ -386,7 +451,7 @@ const RoleManagement = () => {
                                             onChange={() => handlePermissionChange(key)}
                                         />
                                     }
-                                    label={key.replace('can', '').replace(/([A-Z])/g, ' $1').trim()}
+                                    label={permissionLabels[key]}
                                 />
                             ))}
                         </FormGroup>

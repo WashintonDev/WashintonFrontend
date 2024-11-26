@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Card, CardContent, Grid, Typography, Paper } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -7,6 +7,7 @@ import {
   Store as StoreIcon
 } from '@mui/icons-material';
 import AdminSideB from '../../components/AdminSidebar';
+import { BASE_API_URL } from '../../services/ApisConfig';
 
 const StatCard = ({ title, value, icon, color }) => (
   <Card sx={{ height: '100%' }}>
@@ -20,13 +21,7 @@ const StatCard = ({ title, value, icon, color }) => (
             {value}
           </Typography>
         </Box>
-        <Box
-          sx={{
-            backgroundColor: `${color}20`,
-            borderRadius: '50%',
-            padding: 2
-          }}
-        >
+        <Box sx={{ backgroundColor: `${color}20`, borderRadius: '50%', padding: 2 }}>
           {icon}
         </Box>
       </Box>
@@ -35,25 +30,56 @@ const StatCard = ({ title, value, icon, color }) => (
 );
 
 const Dashboard = () => {
-  const stats = {
-    totalUsers: 50,
-    totalRoles: 4,
-    activeAdmins: 3,
-    totalStores: 5
-  };
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalRoles: 0,
+    activeAdmins: 0,
+    totalStores: 0
+  });
+
+  const [recentUsers, setRecentUsers] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Obtener usuarios
+        const usersResponse = await fetch(`${BASE_API_URL}user`);
+        const usersData = await usersResponse.json();
+        
+        // Obtener tiendas
+        const storesResponse = await fetch(`${BASE_API_URL}store`);
+        const storesData = await storesResponse.json();
+
+        // Calcular estadísticas
+        const activeAdmins = usersData.filter(user => user.role === 'admin' && user.status === 'active').length;
+        const recentUsersList = usersData
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 5);
+
+        setStats({
+          totalUsers: usersData.length,
+          totalRoles: 6, // Número fijo de roles según tu sistema
+          activeAdmins: activeAdmins,
+          totalStores: storesData.length
+        });
+
+        setRecentUsers(recentUsersList);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   return (
     <Box sx={{ display: 'flex' }}>
-
       <AdminSideB />
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          marginLeft: `${0}px`, // Reserva espacio para el Drawer
-        }}
-      >
+      <Box component="main" sx={{ flexGrow: 1, p: 3, marginLeft: `${0}px` }}>
         <Typography variant="h4" gutterBottom>
           Panel de Administración
         </Typography>
@@ -97,9 +123,22 @@ const Dashboard = () => {
               <Typography variant="h6" gutterBottom>
                 Usuarios Recientes
               </Typography>
-              <Typography color="textSecondary">
-                No hay usuarios nuevos para mostrar
-              </Typography>
+              {recentUsers.length > 0 ? (
+                recentUsers.map((user, index) => (
+                  <Box key={index} sx={{ mb: 1 }}>
+                    <Typography>
+                      {user.first_name} {user.last_name} - {user.email}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      Registrado: {new Date(user.created_at).toLocaleDateString()}
+                    </Typography>
+                  </Box>
+                ))
+              ) : (
+                <Typography color="textSecondary">
+                  No hay usuarios nuevos para mostrar
+                </Typography>
+              )}
             </Paper>
           </Grid>
 
@@ -109,7 +148,7 @@ const Dashboard = () => {
                 Actividad Administrativa
               </Typography>
               <Typography color="textSecondary">
-                No hay actividades administrativas recientes
+                {loading ? 'Cargando actividades...' : 'No hay actividades administrativas recientes'}
               </Typography>
             </Paper>
           </Grid>
