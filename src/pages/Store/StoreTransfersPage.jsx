@@ -155,16 +155,16 @@ const StoreTransferPage = () => {
       <Select
         value={status}
         onChange={(value) => handleStatusChange(record.store_transfer_id, value)}
-        style={{ width: 50 }}
+        style={{ width: 60 }}
       >
         <Option value="pending">
-        <ClockCircleOutlined style={{ fontSize: '18px', color: '#faad14' }} />
+        <ClockCircleOutlined style={{ fontSize: '18px', color: '#faad14' }} justify="center"/>
         </Option>
         <Option value="delivering">
-          <CarOutlined style={{ fontSize: '18px', color: '#1890ff' }} />
+          <CarOutlined style={{ fontSize: '18px', color: '#1890ff' }} justify="center"/>
         </Option>
         <Option value="delivered">
-          <CheckCircleOutlined style={{ fontSize: '18px', color: '#52c41a' }} />
+          <CheckCircleOutlined style={{ fontSize: '18px', color: '#52c41a' }} justify="center"/>
         </Option>
       </Select>
     ) },
