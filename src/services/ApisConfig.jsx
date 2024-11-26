@@ -34,4 +34,4 @@ export const API_URL_PRODUCT_LABELS = BASE_API_URL_TESTING + 'products/labels';
 export const API_URL_TRANSPORT_ORDER = BASE_API_URL_TESTING + 'warehouse_transfer/'
 export const API_URL_TRANSPORT_ORDER_DETAIL = BASE_API_URL_TESTING + 'warehouse_transfer_detail/'
 
-export const API_URL_ROLES = BASE_API_URL + 'roles/';
+
