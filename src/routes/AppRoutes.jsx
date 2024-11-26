@@ -11,6 +11,7 @@ import TransferOrders from "../pages/TransferOrders/TransferOrders";
 import Dispatch from "../pages/Dispatch/Dispatch";
 import { UserProvider } from '../services/userContxt';
 import Admin from '../pages/Dashboard/Admin';
+import EmployeeStorePage from "../pages/Employees/EmployeeStorePage";
 
 
 const AppRoutes = () => (
@@ -26,7 +27,8 @@ const AppRoutes = () => (
         <Route path="/sales/*" element={<Sales />} />
         <Route path="/dispatch/*" element={<Dispatch />} />
         <Route path="/transfer-orders/*" element={<TransferOrders />} />
-        <Route path="/admin/*" element={<Admin />} /> 
+        <Route path="/admin/*" element={<Admin />} />
+        <Route path="/employees/*" element={<EmployeeStorePage />} />
       </Route>
     </Routes>
     </UserProvider>

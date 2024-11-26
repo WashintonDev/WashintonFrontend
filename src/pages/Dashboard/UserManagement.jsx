@@ -1,90 +1,238 @@
-import React, { useState, useEffect } from 'react';
-import { message, Button, Spin, Card } from 'antd';
-import { useNavigate } from 'react-router-dom';
-import {BASE_API_URL} from '../../services/ApisConfig';
+import { useState, useEffect } from 'react';
+import { Table, Modal, Form, Input, Select, notification, Button, Space, Tooltip, Tag, Upload } from 'antd';
+import { EditOutlined, DeleteOutlined, UploadOutlined } from '@ant-design/icons';
+import Navbar from '../../components/Navbar';
+import logoWash from '../../assets/images/logowashsmall.png';
+import { BASE_API_URL } from '../../services/ApisConfig';
+import AdminSideB from '../../components/AdminSidebar';
+import { Box } from '@mui/material';
+
 const UserManagement = () => {
-  const [users, setUsers] = useState([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+    const [users, setUsers] = useState([]);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [editingUser, setEditingUser] = useState(null);
+    const [form] = Form.useForm();
+    const [searchText, setSearchText] = useState('');
+    const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
+    const [loading, setLoading] = useState(true);
 
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const role = localStorage.getItem("role");
-    if (role === "admin") {
-      setIsAdmin(true);
-    } else {
-      setLoading(false);
-      navigate('/');
-    }
-  }, [navigate]);
-
-  useEffect(() => {
-    if (isAdmin) {
-      const loadUsers = async () => {
+    // Función para obtener usuarios
+    const fetchUsers = async () => {
         try {
-          const response = await fetch(`${BASE_API_URL}user`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error('Error al cargar usuarios');
-          }
-
-          const data = await response.json();
-          setUsers(data);
-          setLoading(false);
-        } catch (err) {
-          message.error('Error al cargar usuarios: ' + err.message);
-          setLoading(false);
+            const response = await fetch(`${BASE_API_URL}user`);
+            if (!response.ok) throw new Error('Error fetching users');
+            const data = await response.json();
+            setUsers(data);
+            setLoading(false);
+        } catch (error) {
+            notification.error({ message: error.message || 'Error al cargar usuarios' });
+            setLoading(false);
         }
-      };
+    };
 
-      loadUsers();
-    }
-  }, [isAdmin]);
+    // Función para manejar el guardado
+    const handleOk = async () => {
+        try {
+            const values = await form.validateFields();
+            if (editingUser) {
+                await fetch(`${BASE_API_URL}user/${editingUser.user_id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(values),
+                });
+                notification.success({ message: 'Usuario actualizado exitosamente' });
+            } else {
+                await fetch(`${BASE_API_URL}user`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(values),
+                });
+                notification.success({ message: 'Usuario creado exitosamente' });
+            }
+            setIsModalVisible(false);
+            fetchUsers();
+        } catch (error) {
+            notification.error({ message: error.message || 'Error al guardar usuario' });
+        }
+    };
 
-  if (loading) {
-    return <Spin size="large" className="loading-spinner" />;
-  }
+    // Función para manejar la eliminación
+    const handleDelete = async (id) => {
+        try {
+            await fetch(`${BASE_API_URL}user/${id}`, { method: 'DELETE' });
+            notification.success({ message: 'Usuario eliminado exitosamente' });
+            fetchUsers();
+        } catch (error) {
+            notification.error({ message: error.message || 'Error al eliminar usuario' });
+        }
+    };
 
-  if (!isAdmin) {
-    return null;
-  }
+    // Función para manejar la edición
+    const handleEdit = (user) => {
+        setEditingUser(user);
+        form.setFieldsValue({
+            first_name: user.first_name,
+            last_name: user.last_name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role
+        });
+        setIsModalVisible(true);
+    };
 
-  const handleGoToSignup = () => {
-    navigate('/sign-up');
-  };
+    useEffect(() => {
+        fetchUsers();
+    }, []);
 
-  return (
-    <div className="container mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">Gestión de Usuarios</h2>
-      <Button
-        type="primary"
-        onClick={handleGoToSignup}
-        className="mb-4"
-      >
-        Crear Nuevo Usuario
-      </Button>
-      <div>
-        <h3 className="text-xl font-bold mb-4">Usuarios Existentes</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {users.map(user => (
-            <Card key={user.id} title={user.displayName} className="mb-4">
-              <p><strong>Nombre:</strong> {user.first_name}</p>
-              <p><strong>Apellido:</strong> {user.last_name}</p>
-              <p><strong>Email:</strong> {user.email}</p>
-              <p><strong>Rol:</strong> {user.role}</p>
-              <p><strong>Estado:</strong> {user.firebase_user_ID}</p>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+    const columns = [
+        {
+            title: 'No.',
+            key: 'index',
+            render: (_, __, index) => (pagination.current - 1) * pagination.pageSize + index + 1,
+            width: 60,
+        },
+        {
+            title: 'Nombre',
+            dataIndex: 'first_name',
+            key: 'first_name',
+            render: (_, record) => `${record.first_name} ${record.last_name}`,
+            ellipsis: true,
+        },
+        {
+            title: 'Email',
+            dataIndex: 'email',
+            key: 'email',
+            ellipsis: true,
+            render: (text) => <Tag color="blue">{text}</Tag>,
+        },
+        {
+            title: 'Rol',
+            dataIndex: 'role',
+            key: 'role',
+            render: (role) => <Tag color="purple">{role || 'N/A'}</Tag>,
+        },
+        {
+            title: 'Estado',
+            dataIndex: 'status',
+            key: 'status',
+            render: (status) => <Tag color={status === 'active' ? 'green' : 'red'}>{status}</Tag>,
+        },
+        {
+            title: 'Acciones',
+            key: 'actions',
+            render: (_, record) => (
+                <Space size="middle">
+                    <Tooltip title="Editar" placement="bottom">
+                        <Button 
+                            type="link" 
+                            icon={<EditOutlined />} 
+                            onClick={() => handleEdit(record)}
+                        />
+                    </Tooltip>
+                    <Tooltip title="Eliminar" placement="bottom">
+                        <Button 
+                            danger 
+                            type="link" 
+                            icon={<DeleteOutlined />} 
+                            onClick={() => handleDelete(record.user_id)}
+                        />
+                    </Tooltip>
+                </Space>
+            ),
+        },
+    ];
+
+    const handleAdd = () => {
+        setEditingUser(null);
+        form.resetFields();
+        setIsModalVisible(true);
+    };
+
+    return (
+        <Box sx={{ marginLeft: '250px' }}>
+            <AdminSideB />
+            <div>
+                <Navbar 
+                    title="Gestión de Usuarios" 
+                    buttonText="Agregar Usuario" 
+                    onAddCategory={handleAdd} 
+                    onSearch={(value) => setSearchText(value)}
+                />
+
+                <Table 
+                    loading={loading}
+                    dataSource={users.filter(user => 
+                        !searchText || 
+                        user.first_name?.toLowerCase().includes(searchText.toLowerCase()) ||
+                        user.last_name?.toLowerCase().includes(searchText.toLowerCase()) ||
+                        user.email?.toLowerCase().includes(searchText.toLowerCase())
+                    )} 
+                    columns={columns} 
+                    rowKey="user_id"
+                    pagination={pagination}
+                    onChange={(pagination) => setPagination(pagination)}
+                    style={{ maxWidth: '90%', margin: '0 auto' }}
+                    bordered
+                />
+
+                <Modal
+                    title={editingUser ? 'Editar Usuario' : 'Agregar Usuario'}
+                    open={isModalVisible}
+                    onOk={handleOk}
+                    onCancel={() => setIsModalVisible(false)}
+                    width={700}
+                >
+                    <Form form={form} layout="vertical">
+                        <Form.Item name="first_name" label="Nombre" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="last_name" label="Apellido" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item 
+                            name="email" 
+                            label="Email" 
+                            rules={[
+                                { required: true },
+                                { type: 'email' }
+                            ]}
+                        >
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="role" label="Rol" rules={[{ required: true }]}>
+                            <Select>
+                                <Select.Option value="admin">Admin</Select.Option>
+                                <Select.Option value="store">Store</Select.Option>
+                            </Select>
+                        </Form.Item>
+                        <Form.Item name="foto" label="Foto">
+                            <Upload>
+                                <Button icon={<UploadOutlined />}>Seleccionar Foto</Button>
+                            </Upload>
+                        </Form.Item>
+                    </Form>
+                </Modal>
+
+                <div style={{ 
+                    padding: '20px', 
+                    maxWidth: '90%', 
+                    margin: '0 auto',
+                    textAlign: 'left'
+                }}>
+                    <Button 
+                        type="link" 
+                        href="/admin"
+                        style={{ fontSize: '18px' }}
+                    >
+                        <img 
+                            src={logoWash}
+                            style={{ height: '30px' }}
+                        />
+                    </Button>
+                </div>
+            </div>
+        </Box>
+    );
 };
 
 export default UserManagement;
