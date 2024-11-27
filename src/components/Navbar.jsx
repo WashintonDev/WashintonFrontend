@@ -47,6 +47,7 @@ const NavBarMenu = ({ title, onAddCategory, onSearch, showSearch = true, showAdd
             <Menu.Item>
                 <Link to="/sales/">Sales</Link>
             </Menu.Item>
+            <Menu.Item><Link to="/sales/sales-report">Sales report</Link></Menu.Item>
             <Menu.Item>
                 <Link to="/inventory/product">Products</Link>
             </Menu.Item>
