@@ -1,5 +1,6 @@
 
-export const BASE_API_URL = import.meta.env.VITE_API_URL;
+const BASE_API_URL = import.meta.env.VITE_API_URL;
+const LOCAL_API_URL = import.meta.env.VITE_API_URL_LOCALHOST;
 const BASE_API_URL_TESTING = 'http://0.0.0.0:8000/api/'
 
 // Product Images API URLs
@@ -14,7 +15,9 @@ export const API_URL_SUPPLIERS = BASE_API_URL + 'supplier/';
 export const API_URL_SUPPLIERS_GLOBAL_HISTORY = BASE_API_URL + 'product_batch/';
 export const API_URL_STORES = BASE_API_URL + 'store/';
 export const API_URL_WAREHOUSES = BASE_API_URL + 'warehouse/';
-export const API_URL_WAREHOUSES_TRANSFERS = BASE_API_URL + "warehouse_transfer/";
+export const API_URL_WAREHOUSES_TRANSFERS = LOCAL_API_URL + "warehouse_transfer/";
+export const API_URL_GET_WAREHOUSES_TRANSFERS = LOCAL_API_URL + "get_warehouse_transfer/";
+export const API_URL_UPDATE_WAREHOUSES_TRANSFERS = LOCAL_API_URL + "update_warehouse_transfer/";
 export const API_URL_INVENTORIES = BASE_API_URL + 'inventory/';
 export const API_URL_PRODUCT_BATCH = BASE_API_URL + 'product_batch/';
 export const API_URL_BATCH = BASE_API_URL + 'batch/';
