@@ -2,6 +2,7 @@
 import React from 'react';
 import'../../assets/styles/login.css'
 import NavBarHome from '../../components/NavBar Home';
+import SalesByStoreChart from '../Sales/SaleChart';
 
 const Home = () => {
   return (
@@ -10,7 +11,7 @@ const Home = () => {
       <div className="home">
 
       <h1>Welcome to the Home Page</h1>
-
+          <SalesByStoreChart />
           Lorem ipsum dolor sit amet, consectetur adipisicing elit. Itaque blanditiis, explicabo minima aperiam esse iure earum laborum nobis totam pariatur tempora eveniet, enim autem sapiente distinctio delectus! Exercitationem, quae illo!
           Perspiciatis eaque voluptas sequi magnam quae fuga iusto aliquid, laboriosam iste provident, modi officia nulla! Consequuntur vel nostrum aliquid ipsum nihil totam debitis quo eveniet iure, tenetur beatae sed voluptas!
           In magni incidunt cupiditate expedita eveniet dolorem, optio exercitationem neque perferendis libero omnis qui a vero voluptas tempore, quis repudiandae sequi, sint voluptate odit animi! Quasi tempore vitae qui amet.
