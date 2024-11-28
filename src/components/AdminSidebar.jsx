@@ -30,11 +30,6 @@ const menuItems = [
         icon: <AccountCircleIcon />,
         path: '/admin/profile'
     },
-    {
-        text: 'Empleados',
-        icon: <PeopleIcon />,
-        path: '/employees'
-    },
 ];
 
 const AdminSideB= () => {

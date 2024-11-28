@@ -33,8 +33,8 @@ const SignUp = () => {
   // Esta función se dispara cuando se cambia el rol
   const handleRoleChange = (value) => {
     setRole(value);
-    if (value !== "store") {
-      setStoreId(null); // Si el rol no es 'store', limpiamos el storeId
+    if (value === "admin" || value === "logistics_coordinator" || value === "warehouse_employee" || value === "supplies_admin") {
+      setStoreId(null); // Si el rol no requiere store, limpiamos el storeId
     }
   };
 
@@ -45,8 +45,8 @@ const SignUp = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const firebase_user_ID = userCredential.user.uid;
       
-      // Si el rol es 'admin', no se pasa store_id; si es 'store', se usa el seleccionado
-      const store_id = role === "admin" ? null : storeId;
+      // Si el rol es uno de los roles de admin/logistics/warehouse/supplies, no se pasa store_id; si es uno de ventas, se usa el storeId
+      const store_id = role === "admin" || role === "logistics_coordinator" || role === "warehouse_employee" || role === "supplies_admin" ? null : storeId;
 
       // Llamamos a la función para registrar el usuario en la base de datos
       await registerUser({
@@ -63,7 +63,7 @@ const SignUp = () => {
 
   const registerUser = async ({ first_name, last_name, email, password, phone, role, firebase_user_ID, store_id }) => {
     try {
-      const location_type = role === "admin" ? "warehouse" : "store"; // Si es admin, location_type es warehouse
+      const location_type = role === "admin" || role === "logistics_coordinator" || role === "warehouse_employee" || role === "supplies_admin" ? "warehouse" : "store"; 
       const response = await axios.post('https://washintonbackend.store/api/user', {
         first_name,
         last_name,
@@ -93,7 +93,7 @@ const SignUp = () => {
   return (
     <div className="login-container">
       <div className="login-box">
-        <Title level={3}>Sign Up</Title>
+        <Title level={3}>Enrolar Empleado</Title>
         <Form name="signup" onFinish={onFinish} className="login-form">
           <Form.Item name="first_name" rules={[{ required: true, message: "Type Your First Name" }]}>
             <Input prefix={<UserOutlined />} placeholder="First Name" size="large" />
@@ -138,14 +138,18 @@ const SignUp = () => {
           <Form.Item name="role" rules={[{ required: true, message: "Please select a role" }]}>
             <Select placeholder="Select a role" size="large" onChange={handleRoleChange} value={role}>
               <Option value="admin">Admin</Option>
-              <Option value="store">Store</Option>
+              <Option value="logistics_coordinator">Logistics Coordinator</Option>
+              <Option value="warehouse_employee">Warehouse Employee</Option>
+              <Option value="supplies_admin">Supplies Admin</Option>
+              <Option value="sales_supervisor">Sales Supervisor</Option>
+              <Option value="basic_employee">Basic Employee</Option>
             </Select>
           </Form.Item>
 
-          {role === "store" && (
+          {role === "store" || role === "sales_supervisor" || role === "basic_employee" ? (
             <Form.Item
               name="store_id"
-              rules={[{ required: role === "store", message: "Please select a store" }]}
+              rules={[{ required: role === "store" || role === "sales_supervisor" || role === "basic_employee", message: "Please select a store" }]}
             >
               <Select
                 placeholder="Select a store"
@@ -158,7 +162,7 @@ const SignUp = () => {
                 ))}
               </Select>
             </Form.Item>
-          )}
+          ) : null}
 
           <Form.Item>
             <Button type="primary" htmlType="submit" className="login-form-button" size="large" block loading={loading}>
