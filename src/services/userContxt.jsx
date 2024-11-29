@@ -1,44 +1,40 @@
 import React, { createContext, useState, useEffect } from "react";
-
+import fetchUserRole from "../services/fetchUserRole";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 export const UserContext = createContext();
 
-// Proveedor del contexto
 export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState(null); 
-  
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const storedRole = localStorage.getItem("role");
-    const storedToken = localStorage.getItem("token");
+  const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
 
-    if (storedUser && storedRole && storedToken) {
-      setUser({
-        email: storedUser,
-        role: storedRole,
-        token: storedToken,
-      });
-    }
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Usuario autenticado en Firebase
+        const firebaseUserID = firebaseUser.uid;
+
+        // Obtener el rol desde el backend
+        const fetchedRole = await fetchUserRole(firebaseUserID);
+
+        if (fetchedRole) {
+          setRole(fetchedRole); // Almacena el rol
+        }
+
+        setUser({ email: firebaseUser.email, firebaseUserID }); // Almacena el usuario
+      } else {
+        // Usuario no autenticado
+        setUser(null);
+        setRole(null);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  // Función para iniciar sesión
-  const login = (userData) => {
-    localStorage.setItem("user", userData.email);
-    localStorage.setItem("role", userData.role);
-    localStorage.setItem("token", userData.token);
-    setUser(userData);
-  };
-
-  // Función para cerrar sesión
-  const logout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("role");
-    localStorage.removeItem("token");
-    setUser(null);
-  };
-
   return (
-    <UserContext.Provider value={{ user, login, logout }}>
+    <UserContext.Provider value={{ user, role }}>
       {children}
     </UserContext.Provider>
   );
