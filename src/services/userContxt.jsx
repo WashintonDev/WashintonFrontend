@@ -12,19 +12,15 @@ export const UserProvider = ({ children }) => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Usuario autenticado en Firebase
         const firebaseUserID = firebaseUser.uid;
-
-        // Obtener el rol desde el backend
         const fetchedRole = await fetchUserRole(firebaseUserID);
 
         if (fetchedRole) {
-          setRole(fetchedRole); // Almacena el rol
+          setRole(fetchedRole);
         }
 
-        setUser({ email: firebaseUser.email, firebaseUserID }); // Almacena el usuario
+        setUser({ email: firebaseUser.email, firebaseUserID });
       } else {
-        // Usuario no autenticado
         setUser(null);
         setRole(null);
       }

@@ -59,10 +59,6 @@ const Login = () => {
             <Input
               prefix={<MailOutlined />}
               placeholder="Email Address"
-              rules={[
-                { required: true, message: "Please enter your email" },
-                { type: "email", message: "Please enter a valid email address" },
-              ]}              
               size="large"
             />
           </Form.Item>
