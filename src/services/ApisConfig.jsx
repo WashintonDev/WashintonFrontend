@@ -29,3 +29,4 @@ export const API_URL_SALES = BASE_API_URL + 'sale/';
 export const API_URL_STORE_TRANSFER = BASE_API_URL + 'store-transfers';
 export const API_URL_STORE_TRANSFER_DETAIL = BASE_API_URL + 'store-transfer-details';
 export const API_URL_CREATE_STORE_TRANSFER = BASE_API_URL + 'create-transfer';
+export const API_URL_ROLES = BASE_API_URL + 'roles/';
