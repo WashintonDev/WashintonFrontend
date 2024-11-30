@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Layout, Card, Avatar, Typography, Descriptions, message, Row, Col } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
-import SideBarAdmin from '../../components/SideBarAdmin';
+import SideBarAdmin from '../../components/SideBarAdmin'; // Asegúrate de que esta ruta es correcta
 
 const { Title } = Typography;
 const { Content } = Layout;

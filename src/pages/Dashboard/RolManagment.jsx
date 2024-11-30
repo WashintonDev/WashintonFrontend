@@ -37,7 +37,7 @@ import {
 } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pie } from '@ant-design/plots';
-import SideBarAdmin from '../../components/SidebarAdmin';
+import SideBarAdmin from '../../components/SideBarAdmin'; // Asegúrate de que esta ruta es correcta
 const { Content } = Layout;
 const { Title, Text } = Typography;
 const { Option } = Select;

@@ -32,7 +32,7 @@ import {
 } from "@/services/ApisConfig";
 import StatCard from "../../components/StatCard";
 import ChartContainer from "../../components/ChartContainer";
-import SideBarAdmin from "../../components/SidebarAdmin";
+import SideBarAdmin from '../../components/SideBarAdmin'; // Asegúrate de que esta ruta es correcta
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
