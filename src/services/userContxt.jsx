@@ -1,10 +1,15 @@
 import React, { createContext, useState, useEffect } from "react";
 import fetchUserRole from "../services/fetchUserRole";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import fetchUserRole from "../services/fetchUserRole";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
+
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
 
@@ -34,6 +39,7 @@ export const UserProvider = ({ children }) => {
   }, []);
 
   return (
+    <UserContext.Provider value={{ user, role }}>
     <UserContext.Provider value={{ user, role }}>
       {children}
     </UserContext.Provider>
