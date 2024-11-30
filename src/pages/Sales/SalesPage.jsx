@@ -4,6 +4,7 @@ import { API_URL_PRODUCTS, API_URL_SALES } from '../../services/ApisConfig';
 import { CloseOutlined, DollarOutlined } from '@ant-design/icons';
 import Navbar from '../../components/Navbar';
 
+
 const SalesPage = () => {
     const [products, setProducts] = useState([]);
     const [stores, setStores] = useState([]); 
@@ -421,6 +422,7 @@ const handleQuantityChange = (productId, quantity) => {
         <div>
             <Navbar title="Sales Page" showSearch={false} showAdd={false} />
             <div style={{ padding: '20px', display: 'flex', justifyContent: 'center' }}>
+
                 <div style={{ flex: 1, maxWidth: '850px' }}>
                                     <Select
                         placeholder="Selecciona una tienda"
@@ -509,6 +511,8 @@ const handleQuantityChange = (productId, quantity) => {
                         onChange={(e) => handleReceivedAmountChange(e.target.value)}
                     />
                     <h3>Cambio: <DollarOutlined /> {change}</h3>
+                    {/* <Button onClick={logout}>Logout</Button> */}
+
                 </div>
             </Modal>
         </div>

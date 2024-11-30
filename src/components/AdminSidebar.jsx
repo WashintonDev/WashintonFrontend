@@ -29,7 +29,7 @@ const menuItems = [
         text: 'Perfil',
         icon: <AccountCircleIcon />,
         path: '/admin/profile'
-    }
+    },
 ];
 
 const AdminSideB= () => {

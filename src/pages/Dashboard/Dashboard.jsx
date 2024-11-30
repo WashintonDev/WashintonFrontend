@@ -1,237 +1,160 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { useState, useEffect } from 'react';
+import { Box, Card, CardContent, Grid, Typography, Paper } from '@mui/material';
 import {
-  Layout,
-  Typography,
-  Row,
-  Col,
-  Avatar,
-  Dropdown,
-  Menu,
-  Input,
-  Spin,
-  Alert,
-  Table,
-  Card,
-} from "antd";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  UserOutlined,
-  TeamOutlined,
-  ShopOutlined,
-  SettingOutlined,
-  LogoutOutlined,
-  DollarOutlined,
-} from "@ant-design/icons";
-import {
-  API_URL_USERS,
-  API_URL_ROLES,
-  API_URL_STORES,
-  API_URL_PRODUCT_BATCH,
-  API_URL_BATCH,
-} from "@/services/ApisConfig";
-import StatCard from "../../components/StatCard";
-import ChartContainer from "../../components/ChartContainer";
-import SideBarAdmin from '../../components/SideBarAdmin'; // Asegúrate de que esta ruta es correcta
+  People as PeopleIcon,
+  Security as SecurityIcon,
+  AdminPanelSettings as AdminIcon,
+  Store as StoreIcon
+} from '@mui/icons-material';
+import AdminSideB from '../../components/AdminSidebar';
+import { BASE_API_URL } from '../../services/ApisConfig';
 
-const { Header, Content } = Layout;
-const { Title } = Typography;
+const StatCard = ({ title, value, icon, color }) => (
+  <Card sx={{ height: '100%' }}>
+    <CardContent>
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box>
+          <Typography color="textSecondary" gutterBottom variant="h6">
+            {title}
+          </Typography>
+          <Typography color="textPrimary" variant="h4">
+            {value}
+          </Typography>
+        </Box>
+        <Box sx={{ backgroundColor: `${color}20`, borderRadius: '50%', padding: 2 }}>
+          {icon}
+        </Box>
+      </Box>
+    </CardContent>
+  </Card>
+);
 
 const Dashboard = () => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [dashboardData, setDashboardData] = useState({
+  const [stats, setStats] = useState({
     totalUsers: 0,
+    totalRoles: 0,
     activeAdmins: 0,
-    storesCount: 0,
-    productBatchData: [],
+    totalStores: 0
   });
-  const [selectedChart, setSelectedChart] = useState('bar');
-  const [chartKey, setChartKey] = useState(0);
+
+  const [recentUsers, setRecentUsers] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchStats = async () => {
       try {
-        const [usersRes, rolesRes, storesRes, productBatchRes, batchesRes] = await Promise.all([
-          axios.get(API_URL_USERS),
-          axios.get(API_URL_ROLES),
-          axios.get(API_URL_STORES),
-          axios.get(API_URL_PRODUCT_BATCH),
-          axios.get(API_URL_BATCH),
-        ]);
+        // Obtener usuarios
+        const usersResponse = await fetch(`${BASE_API_URL}user`);
+        const usersData = await usersResponse.json();
+        
+        // Obtener tiendas
+        const storesResponse = await fetch(`${BASE_API_URL}store`);
+        const storesData = await storesResponse.json();
 
-        const totalUsers = usersRes.data.length;
-        const adminRole = rolesRes.data.find(role => role.name === 'admin');
-        const activeAdmins = adminRole
-          ? usersRes.data.filter(user => user.role_id === adminRole.role_id && user.status === 'active').length
-          : 0;
-        const storesCount = storesRes.data.length;
+        // Calcular estadísticas
+        const activeAdmins = usersData.filter(user => user.role === 'admin' && user.status === 'active').length;
+        const recentUsersList = usersData
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 5);
 
-        const receivedBatches = batchesRes.data.filter(batch => batch.status === 'received').map(batch => batch.batch_id);
-        const productBatchData = productBatchRes.data
-          .filter(item => receivedBatches.includes(item.batch_id))
-          .map(item => ({
-            batch_name: item.batch.batch_name,
-            quantity: item.quantity,
-            product_name: item.product.name,
-            value: item.quantity * item.product.price,
-          }))
-          .filter(item => item.quantity !== null && item.value !== null);
-
-        setDashboardData({
-          totalUsers,
-          activeAdmins,
-          storesCount,
-          productBatchData: productBatchData.length ? productBatchData : [],
+        setStats({
+          totalUsers: usersData.length,
+          totalRoles: 6, // Número fijo de roles según tu sistema
+          activeAdmins: activeAdmins,
+          totalStores: storesData.length
         });
+
+        setRecentUsers(recentUsersList);
         setLoading(false);
-        setChartKey(prevKey => prevKey + 1);
       } catch (error) {
-        console.error("Error fetching data", error);
-        setError("Failed to fetch dashboard data. Please try again later.");
+        console.error('Error fetching stats:', error);
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchStats();
   }, []);
 
-  const userMenu = (
-    <Menu>
-      <Menu.Item key="1" icon={<SettingOutlined />}>
-        Settings
-      </Menu.Item>
-      <Menu.Item key="2" icon={<LogoutOutlined />}>
-        Logout
-      </Menu.Item>
-    </Menu>
-  );
-
-  const columns = [
-    {
-      title: 'Batch Name',
-      dataIndex: 'batch_name',
-      key: 'batch_name',
-    },
-    {
-      title: 'Product Name',
-      dataIndex: 'product_name',
-      key: 'product_name',
-    },
-    {
-      title: 'Quantity',
-      dataIndex: 'quantity',
-      key: 'quantity',
-    },
-    {
-      title: 'Value',
-      dataIndex: 'value',
-      key: 'value',
-      render: (value) => `$${value.toFixed(2)}`,
-    },
-  ];
-
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Spin size="large" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return <Alert message="Error" description={error} type="error" showIcon />;
-  }
-
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      <SideBarAdmin />
-      <Layout>
-        <Header style={{ 
-          background: '#fff', 
-          padding: '0 24px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          boxShadow: '0 1px 4px rgba(0,21,41,.08)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            <Title level={3} style={{ margin: 0 }}>Inventory Management Dashboard</Title>
-            <Input.Search 
-              placeholder="Search..." 
-              style={{ width: 300 }} 
-              onSearch={value => console.log(value)}
+    <Box sx={{ display: 'flex' }}>
+      <AdminSideB />
+      <Box component="main" sx={{ flexGrow: 1, p: 3, marginLeft: `${0}px` }}>
+        <Typography variant="h4" gutterBottom>
+          Panel de Administración
+        </Typography>
+
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              title="Total Usuarios"
+              value={stats.totalUsers}
+              icon={<PeopleIcon sx={{ color: '#1976d2' }} />}
+              color="#1976d2"
             />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <Dropdown overlay={userMenu} placement="bottomRight" arrow>
-              <Avatar style={{ backgroundColor: '#1890ff', cursor: 'pointer' }} icon={<UserOutlined />} />
-            </Dropdown>
-          </div>
-        </Header>
-        <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', borderRadius: '4px' }}>
-          <AnimatePresence>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Row gutter={[16, 16]}>
-                <Col xs={24} sm={24} md={12} lg={6}>
-                  <StatCard
-                    title="Total Registered Users"
-                    value={dashboardData.totalUsers}
-                    icon={<UserOutlined />}
-                    color="#52c41a"
-                  />
-                </Col>
-                <Col xs={24} sm={24} md={12} lg={6}>
-                  <StatCard
-                    title="Active System Administrators"
-                    value={dashboardData.activeAdmins}
-                    icon={<TeamOutlined />}
-                    color="#f5222d"
-                  />
-                </Col>
-                <Col xs={24} sm={24} md={12} lg={6}>
-                  <StatCard
-                    title="Registered Store Locations"
-                    value={dashboardData.storesCount}
-                    icon={<ShopOutlined />}
-                    color="#1890ff"
-                  />
-                </Col>
-                <Col xs={24} sm={24} md={12} lg={6}>
-                  <StatCard
-                    title="Total Inventory Value"
-                    value={dashboardData.productBatchData.reduce((sum, item) => sum + item.value, 0).toFixed(2)}
-                    icon={<DollarOutlined />}
-                    color="#faad14"
-                    prefix="$"
-                  />
-                </Col>
-              </Row>
-            </motion.div>
-          </AnimatePresence>
-          <Card title="Product Batch Analysis" style={{ marginTop: 24 }}>
-            <ChartContainer
-              key={chartKey}
-              data={dashboardData.productBatchData}
-              selectedChart={selectedChart}
-              setSelectedChart={setSelectedChart}
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              title="Roles del Sistema"
+              value={stats.totalRoles}
+              icon={<SecurityIcon sx={{ color: '#2e7d32' }} />}
+              color="#2e7d32"
             />
-          </Card>
-          <Card title="Product Batch Details" style={{ marginTop: 24 }}>
-            <Table 
-              columns={columns} 
-              dataSource={dashboardData.productBatchData} 
-              rowKey="batch_name" 
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              title="Administradores Activos"
+              value={stats.activeAdmins}
+              icon={<AdminIcon sx={{ color: '#ed6c02' }} />}
+              color="#ed6c02"
             />
-          </Card>
-        </Content>
-      </Layout>
-    </Layout>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              title="Tiendas Registradas"
+              value={stats.totalStores}
+              icon={<StoreIcon sx={{ color: '#9c27b0' }} />}
+              color="#9c27b0"
+            />
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Usuarios Recientes
+              </Typography>
+              {recentUsers.length > 0 ? (
+                recentUsers.map((user, index) => (
+                  <Box key={index} sx={{ mb: 1 }}>
+                    <Typography>
+                      {user.first_name} {user.last_name} - {user.email}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      Registrado: {new Date(user.created_at).toLocaleDateString()}
+                    </Typography>
+                  </Box>
+                ))
+              ) : (
+                <Typography color="textSecondary">
+                  No hay usuarios nuevos para mostrar
+                </Typography>
+              )}
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Actividad Administrativa
+              </Typography>
+              <Typography color="textSecondary">
+                {loading ? 'Cargando actividades...' : 'No hay actividades administrativas recientes'}
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
+    </Box>
   );
 };
 

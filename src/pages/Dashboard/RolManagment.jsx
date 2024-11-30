@@ -1,537 +1,364 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
+import {Box,Button,Dialog,DialogActions,DialogContent,DialogTitle,IconButton,Paper,Table,TableBody,TableCell,TableContainer,TableHead,TableRow,TextField,Typography,Chip,Alert,Snackbar,FormControl,
+FormLabel, FormGroup, FormControlLabel,Checkbox,Tooltip,CircularProgress} from '@mui/material';
 import {
-  Layout,
-  Button,
-  Table,
-  Modal,
-  Form,
-  Input,
-  Checkbox,
-  Typography,
-  Space,
-  Tooltip,
-  Spin,
-  notification,
-  Switch,
-  Select,
-  Card,
-  Row,
-  Col,
-  List,
-  Avatar,
-  Tag,
-} from 'antd';
-import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  HistoryOutlined,
-  UserOutlined,
-  LockOutlined,
-  TeamOutlined,
-  BarChartOutlined,
-  ShoppingCartOutlined,
-  FileTextOutlined,
-  BulbOutlined,
-  SearchOutlined,
-} from '@ant-design/icons';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Pie } from '@ant-design/plots';
-import SideBarAdmin from '../../components/SideBarAdmin'; // Asegúrate de que esta ruta es correcta
-const { Content } = Layout;
-const { Title, Text } = Typography;
-const { Option } = Select;
+    Add as AddIcon,
+    Edit as EditIcon,
+    Delete as DeleteIcon
+} from '@mui/icons-material';
+import AdminSideB from '../../components/AdminSidebar';
 
 const RoleManagement = () => {
-  const [roles, setRoles] = useState([]);
-  const [historyDialog, setHistoryDialog] = useState(false);
-  const [roleHistory, setRoleHistory] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [currentRole, setCurrentRole] = useState({
-    name: '',
-    description: '',
-    permissions: [],
-  });
-  const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [form] = Form.useForm();
-
-  useEffect(() => {
-    fetchRoles();
-  }, []);
-
-  const fetchRoles = async () => {
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const mockRoles = [
-        {
-          id: 1,
-          name: 'Administrador',
-          description: 'Control total del sistema',
-          permissions: [
-            'canManageUsers',
-            'canManageRoles',
-            'canManageInventory',
-            'canManageSales',
-            'canViewReports',
-            'canManageSuppliers',
-          ],
-        },
-        {
-          id: 2,
-          name: 'Vendedor',
-          description: 'Gestión de ventas e inventario',
-          permissions: [
-            'canManageInventory',
-            'canManageSales',
-            'canViewReports',
-          ],
-        },
-        {
-          id: 3,
-          name: 'Analista',
-          description: 'Visualización de reportes',
-          permissions: [
-            'canViewReports',
-          ],
-        },
-      ];
-      setRoles(mockRoles);
-    } catch (error) {
-      notification.error({
-        message: 'Error al cargar los roles',
-        description: 'Por favor, intente nuevamente más tarde.',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchRoleHistory = async () => {
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const mockHistory = [
-        {
-          id: 1,
-          action: 'create',
-          roleName: 'Administrador',
-          user: 'Juan Pérez',
-          timestamp: new Date('2024-01-20T10:30:00'),
-          description: 'Creación del rol Administrador',
-        },
-        {
-          id: 2,
-          action: 'update',
-          roleName: 'Vendedor',
-          user: 'María García',
-          timestamp: new Date('2024-01-21T15:45:00'),
-          description: 'Actualización de permisos',
-          changes: {
-            'Gestión de Ventas': { from: 'No', to: 'Sí' },
-            'Gestión de Inventario': { from: 'No', to: 'Sí' },
-          },
-        },
-        {
-          id: 3,
-          action: 'delete',
-          roleName: 'Invitado',
-          user: 'Carlos Rodríguez',
-          timestamp: new Date('2024-01-22T09:15:00'),
-          description: 'Eliminación del rol Invitado',
-        },
-      ];
-      setRoleHistory(mockHistory);
-    } catch (error) {
-      notification.error({
-        message: 'Error al cargar el historial',
-        description: 'Por favor, intente nuevamente más tarde.',
-      });
-    }
-  };
-
-  const handleOpenDialog = (role = null) => {
-    if (role) {
-      setCurrentRole({
-        ...role,
-        permissions: Object.keys(role.permissions).filter(key => role.permissions[key]),
-      });
-      setIsEditing(true);
-      form.setFieldsValue({
-        ...role,
-        permissions: Object.keys(role.permissions).filter(key => role.permissions[key]),
-      });
-    } else {
-      setCurrentRole({
+    // Estados
+    const [roles, setRoles] = useState([]);
+    const [openDialog, setOpenDialog] = useState(false);
+    const [currentRole, setCurrentRole] = useState({
         name: '',
         description: '',
-        permissions: [],
-      });
-      setIsEditing(false);
-      form.resetFields();
-    }
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setCurrentRole({
-      name: '',
-      description: '',
-      permissions: [],
+        permissions: {
+            registerProducts: false,
+            manageRoles: false,
+            confirmTransfer: false,
+            manageSuppliers: false,
+            registerSales: false,
+            viewReports: false
+        }
     });
-    setIsEditing(false);
-    form.resetFields();
-  };
+    const [isEditing, setIsEditing] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        message: '',
+        severity: 'success'
+    });
 
-  const handleSubmit = async () => {
-    try {
-      const values = await form.validateFields();
-      setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    // Actualizar los roles predefinidos
+    const predefinedRoles = [
+        {
+            id: 1,
+            name: 'Administrador',
+            description: 'Control total del sistema',
+            permissions: {
+                registerProducts: true,
+                manageRoles: true,
+                confirmTransfer: true,
+                manageSuppliers: true,
+                registerSales: true,
+                viewReports: true
+            }
+        },
+        {
+            id: 2,
+            name: 'Coordinador de Logística y Almacén',
+            description: 'Gestión de logística y almacén',
+            permissions: {
+                registerProducts: true,
+                manageRoles: false,
+                confirmTransfer: true,
+                manageSuppliers: false,
+                registerSales: false,
+                viewReports: true
+            }
+        },
+        {
+            id: 3,
+            name: 'Empleado Almacén',
+            description: 'Operaciones de almacén',
+            permissions: {
+                registerProducts: false,
+                manageRoles: false,
+                confirmTransfer: true,
+                manageSuppliers: false,
+                registerSales: false,
+                viewReports: false
+            }
+        },
+        {
+            id: 4,
+            name: 'Administrador de Suministros',
+            description: 'Gestión de suministros',
+            permissions: {
+                registerProducts: false,
+                manageRoles: false,
+                confirmTransfer: false,
+                manageSuppliers: true,
+                registerSales: false,
+                viewReports: true
+            }
+        },
+        {
+            id: 5,
+            name: 'Supervisor Ventas',
+            description: 'Supervisión de ventas',
+            permissions: {
+                registerProducts: false,
+                manageRoles: false,
+                confirmTransfer: false,
+                manageSuppliers: false,
+                registerSales: true,
+                viewReports: true
+            }
+        },
+        {
+            id: 6,
+            name: 'Empleado Básico',
+            description: 'Operaciones básicas',
+            permissions: {
+                registerProducts: false,
+                manageRoles: false,
+                confirmTransfer: false,
+                manageSuppliers: false,
+                registerSales: true,
+                viewReports: true
+            }
+        }
+    ];
 
-      const permissions = values.permissions.reduce((acc, permission) => {
-        acc[permission] = true;
-        return acc;
-      }, {});
+    // Actualizar las etiquetas de los permisos
+    const permissionLabels = {
+        registerProducts: 'Registro de productos',
+        manageRoles: 'Gestión de roles',
+        confirmTransfer: 'Confirmación de traslado',
+        manageSuppliers: 'Gestión de proveedores',
+        registerSales: 'Registro de ventas',
+        viewReports: 'Consulta de reportes'
+    };
 
-      if (isEditing) {
-        setRoles(roles.map(role => (role.id === currentRole.id ? { ...role, ...values, permissions } : role)));
-        notification.success({
-          message: 'Rol actualizado exitosamente',
+    // Cargar roles iniciales
+    useEffect(() => {
+        setLoading(true);
+        setTimeout(() => {
+            setRoles(predefinedRoles);
+            setLoading(false);
+        }, 1000);
+    }, []);
+
+    const handleOpenDialog = (role = null) => {
+        if (role) {
+            setCurrentRole(role);
+            setIsEditing(true);
+        } else {
+            setCurrentRole({
+                name: '',
+                description: '',
+                permissions: {
+                    registerProducts: false,
+                    manageRoles: false,
+                    confirmTransfer: false,
+                    manageSuppliers: false,
+                    registerSales: false,
+                    viewReports: false
+                }
+            });
+            setIsEditing(false);
+        }
+        setOpenDialog(true);
+    };
+
+    const handleCloseDialog = () => {
+        setOpenDialog(false);
+        setCurrentRole({
+            name: '',
+            description: '',
+            permissions: {
+                registerProducts: false,
+                manageRoles: false,
+                confirmTransfer: false,
+                manageSuppliers: false,
+                registerSales: false,
+                viewReports: false
+            }
         });
-      } else {
-        const newRole = { ...values, id: roles.length + 1, permissions };
-        setRoles([...roles, newRole]);
-        notification.success({
-          message: 'Rol creado exitosamente',
-        });
-      }
-      handleCloseDialog();
-    } catch (error) {
-      notification.error({
-        message: 'Error al procesar la operación',
-        description: 'Por favor, verifique los datos e intente nuevamente.',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+        setIsEditing(false);
+    };
 
-  const handleDelete = async (id) => {
-    Modal.confirm({
-      title: '¿Estás seguro de que deseas eliminar este rol?',
-      content: 'Esta acción no se puede deshacer.',
-      okText: 'Sí, eliminar',
-      okType: 'danger',
-      cancelText: 'Cancelar',
-      onOk: async () => {
+    const handleSubmit = async () => {
         setLoading(true);
         try {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          setRoles(roles.filter(role => role.id !== id));
-          notification.success({
-            message: 'Rol eliminado exitosamente',
-          });
-        } catch (error) {
-          notification.error({
-            message: 'Error al eliminar el rol',
-            description: 'Por favor, intente nuevamente más tarde.',
-          });
-        } finally {
-          setLoading(false);
-        }
-      },
-    });
-  };
-
-  const filteredRoles = useMemo(() => {
-    return roles.filter(role =>
-      role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      role.description.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [roles, searchTerm]);
-
-  const columns = [
-    {
-      title: 'Nombre',
-      dataIndex: 'name',
-      key: 'name',
-      sorter: (a, b) => a.name.localeCompare(b.name),
-    },
-    {
-      title: 'Descripción',
-      dataIndex: 'description',
-      key: 'description',
-    },
-    {
-      title: 'Permisos',
-      dataIndex: 'permissions',
-      key: 'permissions',
-      render: (permissions) => (
-        <Space wrap>
-          {permissions.map(permission => (
-            <Tag key={permission} color="blue">
-              {permission.replace('can', '').replace(/([A-Z])/g, ' $1').trim()}
-            </Tag>
-          ))}
-        </Space>
-      ),
-    },
-    {
-      title: 'Acciones',
-      key: 'actions',
-      render: (_, role) => (
-        <Space size="middle">
-          <Tooltip title="Editar">
-            <Button
-              icon={<EditOutlined />}
-              onClick={() => handleOpenDialog(role)}
-              type="primary"
-              ghost
-            />
-          </Tooltip>
-          <Tooltip title="Eliminar">
-            <Button
-              icon={<DeleteOutlined />}
-              onClick={() => handleDelete(role.id)}
-              danger
-            />
-          </Tooltip>
-        </Space>
-      ),
-    },
-  ];
-
-  const permissionDistribution = useMemo(() => {
-    const distribution = {};
-    roles.forEach(role => {
-      role.permissions.forEach(permission => {
-        distribution[permission] = (distribution[permission] || 0) + 1;
-      });
-    });
-    return Object.entries(distribution).map(([key, value]) => ({
-      type: key.replace('can', '').replace(/([A-Z])/g, ' $1').trim(),
-      value,
-    }));
-  }, [roles]);
-
-  const pieConfig = {
-    appendPadding: 10,
-    data: permissionDistribution,
-    angleField: 'value',
-    colorField: 'type',
-    radius: 0.8,
-    label: {
-      type: 'outer',
-      content: '{name} {percentage}',
-    },
-    interactions: [
-      { type: 'pie-legend-active' },
-      { type: 'element-active' },
-    ],
-  };
-
-  return (
-    <Layout style={{ minHeight: '100vh' }} className={darkMode ? 'dark' : ''}>
-      <SideBarAdmin />
-      <Content style={{ padding: '24px', backgroundColor: darkMode ? '#141414' : '#f0f2f5' }}>
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Card
-            title={
-              <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }}>
-                <Title level={3} style={{ margin: 0, color: darkMode ? '#fff' : 'inherit' }}>
-                  Gestión Avanzada de Roles
-                </Title>
-                <Space>
-                  <Switch
-                    checkedChildren={<BulbOutlined />}
-                    unCheckedChildren={<BulbOutlined />}
-                    checked={darkMode}
-                    onChange={setDarkMode}
-                  />
-                  <Input
-                    placeholder="Buscar roles..."
-                    prefix={<SearchOutlined />}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    style={{ width: 200 }}
-                  />
-                </Space>
-              </Space>
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (isEditing) {
+                setRoles(roles.map(role =>
+                    role.id === currentRole.id ? currentRole : role
+                ));
+                showSnackbar('Rol actualizado exitosamente', 'success');
+            } else {
+                const newRole = { ...currentRole, id: roles.length + 1 };
+                setRoles([...roles, newRole]);
+                showSnackbar('Rol creado exitosamente', 'success');
             }
-            style={{ backgroundColor: darkMode ? '#1f1f1f' : '#fff' }}
-          >
-            <Space direction="vertical" size="large" style={{ width: '100%' }}>
-              <Row gutter={16}>
-                <Col span={16}>
-                  <Card
-                    title="Lista de Roles"
-                    extra={
-                      <Space>
-                        <Button
-                          type="primary"
-                          icon={<PlusOutlined />}
-                          onClick={() => handleOpenDialog()}
-                        >
-                          Nuevo Rol
-                        </Button>
-                        <Button
-                          icon={<HistoryOutlined />}
-                          onClick={() => {
-                            fetchRoleHistory();
-                            setHistoryDialog(true);
-                          }}
-                        >
-                          Ver Historial
-                        </Button>
-                      </Space>
-                    }
-                    style={{ backgroundColor: darkMode ? '#141414' : '#fff' }}
-                  >
-                    <Table
-                      columns={columns}
-                      dataSource={filteredRoles}
-                      rowKey="id"
-                      loading={loading}
-                      pagination={{ pageSize: 5 }}
-                      style={{ backgroundColor: darkMode ? '#141414' : '#fff' }}
-                    />
-                  </Card>
-                </Col>
-                <Col span={8}>
-                  <Card
-                    title="Distribución de Permisos"
-                    style={{ backgroundColor: darkMode ? '#141414' : '#fff' }}
-                  >
-                    <Pie {...pieConfig} />
-                  </Card>
-                </Col>
-              </Row>
-            </Space>
-          </Card>
-        </motion.div>
+        } catch (error) {
+            showSnackbar('Error al procesar la operación', 'error');
+        } finally {
+            setLoading(false);
+            handleCloseDialog();
+        }
+    };
 
-        <Modal
-          title={isEditing ? 'Editar Rol' : 'Crear Nuevo Rol'}
-          visible={openDialog}
-          onCancel={handleCloseDialog}
-          footer={[
-            <Button key="back" onClick={handleCloseDialog}>
-              Cancelar
-            </Button>,
-            <Button key="submit" type="primary" loading={loading} onClick={handleSubmit}>
-              {isEditing ? 'Actualizar' : 'Crear'}
-            </Button>,
-          ]}
-        >
-          <Form form={form} layout="vertical">
-            <Form.Item
-              name="name"
-              label="Nombre del Rol"
-              rules={[{ required: true, message: 'Por favor ingrese el nombre del rol' }]}
-            >
-              <Input prefix={<LockOutlined />} />
-            </Form.Item>
-            <Form.Item
-              name="description"
-              label="Descripción"
-              rules={[{ required: true, message: 'Por favor ingrese la descripción del rol' }]}
-            >
-              <Input.TextArea />
-            </Form.Item>
-            <Form.Item label="Permisos" name="permissions">
-              <Checkbox.Group style={{ width: '100%' }}>
-                <Row>
-                  <Col span={12}>
-                    <Checkbox value="canManageUsers">Gestionar Usuarios</Checkbox>
-                  </Col>
-                  <Col span={12}>
-                    <Checkbox value="canManageRoles">Gestionar Roles</Checkbox>
-                  </Col>
-                  <Col span={12}>
-                    <Checkbox value="canManageInventory">Gestionar Inventario</Checkbox>
-                  </Col>
-                  <Col span={12}>
-                    <Checkbox value="canManageSales">Gestionar Ventas</Checkbox>
-                  </Col>
-                  <Col span={12}>
-                    <Checkbox value="canViewReports">Ver Reportes</Checkbox>
-                  </Col>
-                  <Col span={12}>
-                    <Checkbox value="canManageSuppliers">Gestionar Proveedores</Checkbox>
-                  </Col>
-                </Row>
-              </Checkbox.Group>
-            </Form.Item>
-          </Form>
-        </Modal>
+    const handleDelete = async (id) => {
+        if (window.confirm('¿Estás seguro de que deseas eliminar este rol?')) {
+            setLoading(true);
+            try {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                setRoles(roles.filter(role => role.id !== id));
+                showSnackbar('Rol eliminado exitosamente', 'success');
+            } catch (error) {
+                showSnackbar('Error al eliminar el rol', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
 
-        <Modal
-          title="Historial de Cambios de Roles"
-          visible={historyDialog}
-          onCancel={() => setHistoryDialog(false)}
-          footer={null}
-          width={800}
-        >
-          <List
-            itemLayout="horizontal"
-            dataSource={roleHistory}
-            renderItem={(item) => (
-              <List.Item>
-                <List.Item.Meta
-                  avatar={
-                    <Avatar
-                      icon={
-                        item.action === 'create' ? <PlusOutlined /> :
-                        item.action === 'update' ? <EditOutlined /> :
-                        <DeleteOutlined />
-                      }
-                      style={{
-                        backgroundColor:
-                          item.action === 'create' ? '#52c41a' :
-                          item.action === 'update' ? '#1890ff' :
-                          '#f5222d'
-                      }}
-                    />
-                  }
-                  title={
-                    <Space>
-                      <Text strong>{item.action === 'create' ? 'Creación' : item.action === 'update' ? 'Actualización' : 'Eliminación'}</Text>
-                      <Text type="secondary">{item.roleName}</Text>
-                    </Space>
-                  }
-                  description={
-                    <>
-                      <Text>{item.description}</Text>
-                      <br />
-                      <Text type="secondary">
-                        {`Por ${item.user} el ${item.timestamp.toLocaleString()}`}
-                      </Text>
-                    </>
-                  }
-                />
-                {item.changes && (
-                  <Space direction="vertical">
-                    {Object.entries(item.changes).map(([key, value]) => (
-                      <Text key={key}>
-                        {`${key}: ${value.from} → ${value.to}`}
-                      </Text>
-                    ))}
-                  </Space>
-                )}
-              </List.Item>
+    const handlePermissionChange = (permission) => {
+        setCurrentRole({
+            ...currentRole,
+            permissions: {
+                ...currentRole.permissions,
+                [permission]: !currentRole.permissions[permission]
+            }
+        });
+    };
+
+    const showSnackbar = (message, severity = 'success') => {
+        setSnackbar({ open: true, message, severity });
+    };
+
+    return (
+        <Box sx={{ marginLeft: '250px' }}>
+            <AdminSideB />
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                <Typography variant="h4" component="h1">
+                    Gestión de Roles
+                </Typography>
+                <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => handleOpenDialog()}
+                >
+                    Nuevo Rol
+                </Button>
+            </Box>
+
+            {loading ? (
+                <Box display="flex" justifyContent="center" my={4}>
+                    <CircularProgress />
+                </Box>
+            ) : (
+                <TableContainer component={Paper}>
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>Nombre</TableCell>
+                                <TableCell>Descripción</TableCell>
+                                <TableCell>Permisos</TableCell>
+                                <TableCell>Acciones</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {roles.map((role) => (
+                                <TableRow key={role.id}>
+                                    <TableCell>{role.name}</TableCell>
+                                    <TableCell>{role.description}</TableCell>
+                                    <TableCell>
+                                        <Box display="flex" gap={1} flexWrap="wrap">
+                                            {Object.entries(role.permissions).map(([key, value]) => (
+                                                value && (
+                                                    <Chip
+                                                        key={key}
+                                                        label={permissionLabels[key]}
+                                                        size="small"
+                                                        color="primary"
+                                                        variant="outlined"
+                                                    />
+                                                )
+                                            ))}
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Tooltip title="Editar">
+                                            <IconButton onClick={() => handleOpenDialog(role)}>
+                                                <EditIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Eliminar">
+                                            <IconButton
+                                                onClick={() => handleDelete(role.id)}
+                                                color="error"
+                                            >
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
             )}
-          />
-        </Modal>
-      </Content>
-    </Layout>
-  );
+
+            <Dialog
+                open={openDialog}
+                onClose={handleCloseDialog}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    {isEditing ? 'Editar Rol' : 'Crear Nuevo Rol'}
+                </DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        label="Nombre del Rol"
+                        fullWidth
+                        value={currentRole.name}
+                        onChange={(e) => setCurrentRole({ ...currentRole, name: e.target.value })}
+                    />
+                    <TextField
+                        margin="dense"
+                        label="Descripción"
+                        fullWidth
+                        multiline
+                        rows={3}
+                        value={currentRole.description}
+                        onChange={(e) => setCurrentRole({ ...currentRole, description: e.target.value })}
+                    />
+                    <FormControl component="fieldset" sx={{ mt: 2 }}>
+                        <FormLabel component="legend">Permisos</FormLabel>
+                        <FormGroup>
+                            {Object.entries(currentRole.permissions).map(([key, value]) => (
+                                <FormControlLabel
+                                    key={key}
+                                    control={
+                                        <Checkbox
+                                            checked={value}
+                                            onChange={() => handlePermissionChange(key)}
+                                        />
+                                    }
+                                    label={permissionLabels[key]}
+                                />
+                            ))}
+                        </FormGroup>
+                    </FormControl>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseDialog}>Cancelar</Button>
+                    <Button onClick={handleSubmit} variant="contained" disabled={loading}>
+                        {isEditing ? 'Guardar Cambios' : 'Crear'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+            >
+                <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
+        </Box>
+    );
 };
 
 export default RoleManagement;
