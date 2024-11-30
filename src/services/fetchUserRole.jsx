@@ -7,19 +7,15 @@ const fetchUserRole = async (firebaseUserID) => {
       `http://127.0.0.1:8000/api/user/firebase/${firebaseUserID}`
     );
 
-    const user = userResponse.data;
+    // Filtrar el usuario en el frontend basado en el firebase_user_ID
+    const user = response.data.find((u) => u.firebase_user_ID === firebaseUserID);
 
-    // Verificar que el usuario tenga rol
-    if (user && user.role) {
-      // Acceder al nombre del rol desde la respuesta
-      const roleName = user.role.name;
-
-      // Almacenar el nombre del rol en localStorage
-      localStorage.setItem('role', roleName);
-
-      return roleName;  // Retorna solo el nombre del rol
+    if (user && user.role_id !== null) {
+      // Almacenar el role_id en el caché (localStorage)
+      localStorage.setItem("role_id", user.role_id);
+      return user.role_id;
     } else {
-      throw new Error("Rol no encontrado para el usuario");
+      throw new Error("Usuario no encontrado o sin rol");
     }
   } catch (error) {
     console.error("Error al obtener el usuario o rol:", error.response?.data || error.message);
