@@ -1,9 +1,11 @@
 export const saveToken = (token) => {
     localStorage.setItem("token", token);
-    localStorage.setItem("token_expiration", expirationTime);
-  };
-  
-  export const getToken = () => {
-    const token = localStorage.getItem("token");
-    return token;
-  };
+};
+
+export const getToken = () => {
+    return localStorage.getItem("token");
+};
+
+export const clearToken = () => {
+    localStorage.removeItem("token");
+};
