@@ -9,6 +9,8 @@ import TransferOrders from "../pages/TransferOrders/TransferOrders";
 import Dispatch from "../pages/Dispatch/Dispatch";
 import { UserProvider } from '../services/userContxt';
 import Admin from '../pages/Dashboard/Admin';
+import Login from "../pages/Login/Login";
+import SignUp from "../pages/Login/SignUp";
 
 const AppRoutes = () => (
   <Router>
