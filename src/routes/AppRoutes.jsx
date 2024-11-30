@@ -3,8 +3,6 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import ProtectedRoute from "../components/protectedRoutes";
 import Home from "../pages/Home/Home";
 import Suppliers from "../pages/Suppliers/Suppliers";
-import Login from "../pages/Login/Login";
-import SignUp from "../pages/Login/Sign-Up";
 import Inventory from "../pages/Inventory/Inventory";
 import Sales from "../pages/Sales/Sales";
 import TransferOrders from "../pages/TransferOrders/TransferOrders";

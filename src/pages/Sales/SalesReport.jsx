@@ -17,8 +17,6 @@ const SalesReport = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [dashboardData, setDashboardData] = useState([]); 
   const [isDashboardVisible, setIsDashboardVisible] = useState(false);
-  const [storeName, setStoreName] = useState('Todas las Tiendas'); // Estado para el nombre de la tienda
-
 
   useEffect(() => {
     const fetchSalesAndStores = async () => {
@@ -73,12 +71,8 @@ const SalesReport = () => {
     if (storeId) {
       const filtered = sales.filter((sale) => sale.store?.store_id === storeId);
       setFilteredSales(filtered);
-  
-      // Obtén el nombre de la tienda seleccionada
-      const selectedStore = stores.find((store) => store.store_id === storeId);
-      setStoreName(selectedStore ? selectedStore.name : 'Sin Asignar');
-  
-      // Agrupa los datos por día
+
+      // aqui se agrupa por dia
       const groupedData = filtered.reduce((acc, sale) => {
         const date = sale.sale_date.split(' ')[0];
         if (!acc[date]) {
@@ -87,12 +81,11 @@ const SalesReport = () => {
         acc[date].total += sale.total_amount;
         return acc;
       }, {});
-  
+
       setDashboardData(Object.values(groupedData));
     } else {
       setFilteredSales(sales);
       setDashboardData([]);
-      setStoreName('Todas las Tiendas'); // Restablece a todas las tiendas
     }
   };
 
@@ -193,7 +186,7 @@ const SalesReport = () => {
   return (
     <div style={{ padding: '20px' }}>
       <Navbar title="Sales Report" showSearch={false} showAdd={false} />
-      <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Reporte de Ventas de {storeName}</h2>
+      <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Reporte de Ventas</h2>
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', gap: '20px' }}>
         <Select
           placeholder="Filtrar por tienda"
@@ -220,7 +213,7 @@ const SalesReport = () => {
         bordered
         pagination={{ pageSize: 10 }}
       />
-      <Modal 
+      <Modal
         title="Detalles de la Venta"
         visible={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
@@ -229,9 +222,8 @@ const SalesReport = () => {
             Cerrar
           </Button>,
         ]}
-        width={600}
       >
-        <Table 
+        <Table
           dataSource={selectedSaleDetails}
           columns={detailColumns}
           rowKey="sale_detail_id"
@@ -253,7 +245,7 @@ const SalesReport = () => {
       </Modal>
 
       <Modal
-        title={storeName}
+        title="Dashboard de Ventas"
         visible={isDashboardVisible}
         onCancel={closeDashboard}
         footer={[
@@ -261,27 +253,13 @@ const SalesReport = () => {
             Cerrar
           </Button>,
         ]}
-        width={850}
+        width={800}
       >
         <ResponsiveContainer width="100%" height={400}>
           <BarChart data={dashboardData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" 
-                       label={{
-                        value: 'Fecha',
-                        position: 'insideBottom',
-                        offset: -5,
-                        style: { fontSize: '16px', fontWeight: 'bold', fill: '#333' },
-                      }} 
-            />
-            <YAxis 
-                  label={{
-                    value: 'Dinero',
-                    angle: -90,
-                    position: 'insideLeft',
-                    style: { fontSize: '16px', fontWeight: 'bold', fill: '#333' },
-                  }} 
-            />
+            <XAxis dataKey="date" />
+            <YAxis />
             <Tooltip />
             <Bar dataKey="total" fill="#8884d8" />
           </BarChart>

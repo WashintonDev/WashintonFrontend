@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Table, Modal, Button, notification, Tag, Image, Select, Checkbox, Space, Typography, Spin, Input,
+    Table, Modal, Button, notification, Tag, Image, Select, Checkbox, Space, Typography, Spin,
 } from 'antd';
-import { BarcodeOutlined, QrcodeOutlined, FileTextOutlined } from '@ant-design/icons';
+import { BarcodeOutlined, QrcodeOutlined } from '@ant-design/icons';
 import { QRCodeCanvas } from 'qrcode.react';
 import { 
     API_URL_PRODUCT_BATCH, 
@@ -29,15 +29,6 @@ const ProductBatchPage = () => {
     const [updatingStatus, setUpdatingStatus] = useState(false);
     const [selectedBatchIds, setSelectedBatchIds] = useState([]);
     const [bulkStatus, setBulkStatus] = useState('');
-    const [reasonModalVisible, setReasonModalVisible] = useState(false);
-    const [reason, setReason] = useState('');
-    const [currentBatchId, setCurrentBatchId] = useState(null);
-    const [newStatus, setNewStatus] = useState('');
-    const [bulkReason, setBulkReason] = useState('');
-    const [bulkReasonModalVisible, setBulkReasonModalVisible] = useState(false);
-    const [reasonsModalVisible, setReasonsModalVisible] = useState(false);
-    const [currentReasons, setCurrentReasons] = useState('');
-    const [currentReasonsBatchName, setCurrentReasonsBatchName] = useState('');
 
     useEffect(() => {
         fetchBatches();
@@ -94,86 +85,44 @@ const ProductBatchPage = () => {
         setCodeModalVisible(true);
     };
 
-    const handleStatusChange = (batchId, status) => {
-        if (status === 'in_process' || status === 'cancelled') {
-            setCurrentBatchId(batchId);
-            setNewStatus(status);
-            setReasonModalVisible(true);
-        } else {
-            updateStatus(batchId, status);
-        }
-    };
-
-    const updateStatus = async (batchId, status, reason = '') => {
+    const handleStatusChange = async (batchId, newStatus) => {
         setUpdatingStatus(true);
         try {
-            const body = { status };
-            if (reason) {
-                body.reasons = reason;
-            }
-    
             const updatedBatch = await handleFetch(`${API_URL_BATCH_UPDATE_STATUS}${batchId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
+                body: JSON.stringify({ status: newStatus }),
             });
-    
             setBatches(batches.map(batch => batch.batch_id === batchId ? updatedBatch : batch));
             notification.success({ message: 'Status updated successfully' });
         } catch (error) {
             console.error(error);
-            notification.error({ message: 'Failed to update status' });
         } finally {
             setUpdatingStatus(false);
         }
     };
 
-    const handleReasonSubmit = () => {
-        updateStatus(currentBatchId, newStatus, reason);
-        setReason('');
-        setReasonModalVisible(false);
-    };
-
-    const handleBulkStatusChange = () => {
-        if (bulkStatus === 'in_process' || bulkStatus === 'cancelled') {
-            setBulkReasonModalVisible(true);
-        } else {
-            submitBulkStatusChange();
-        }
-    };
-
-    const submitBulkStatusChange = async () => {
+    const handleBulkStatusChange = async () => {
         setUpdatingStatus(true);
         try {
-            const batchesToUpdate = selectedBatchIds.map(batchId => ({
-                batch_id: batchId,
-                status: bulkStatus,
-                reasons: bulkReason,
-            }));
-    
             await handleFetch(`${API_URL_BATCH_BULK_UPDATE_STATUS}bulk_update`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ batches: batchesToUpdate }),
+                body: JSON.stringify({
+                    batches: selectedBatchIds.map(batchId => ({
+                        batch_id: batchId,
+                        status: bulkStatus,
+                    })),
+                }),
             });
-    
             fetchBatches();
             notification.success({ message: 'Bulk status updated successfully' });
-            setSelectedBatchIds([]);
-            setBulkReason('');
+            setSelectedBatchIds([]); // Reset selected batch IDs
         } catch (error) {
             console.error(error);
-            notification.error({ message: 'Failed to update bulk status' });
         } finally {
             setUpdatingStatus(false);
-            setBulkReasonModalVisible(false);
         }
-    };
-
-    const handleShowReasons = (reasons, batchName) => {
-        setCurrentReasons(reasons);
-        setCurrentReasonsBatchName(batchName);
-        setReasonsModalVisible(true);
     };
 
     const columns = [
@@ -240,7 +189,6 @@ const ProductBatchPage = () => {
                     <Button type="primary" onClick={() => handleViewProducts(batch)}>View Products</Button>
                     <Button icon={<BarcodeOutlined />} onClick={() => handleShowCode(batch.code, true)} />
                     <Button icon={<QrcodeOutlined />} onClick={() => handleShowCode(batch.code, false)} />
-                    {batch.reasons && <Button icon={<FileTextOutlined />} onClick={() => handleShowReasons(batch.reasons, batch.batch_name)} />}
                 </Space>
             ),
             width: 150,
@@ -327,46 +275,6 @@ const ProductBatchPage = () => {
                         <QRCodeCanvas value={currentCode} />
                     )}
                 </div>
-            </Modal>
-
-            <Modal
-                title="Provide Reason"
-                open={reasonModalVisible}
-                onCancel={() => setReasonModalVisible(false)}
-                onOk={handleReasonSubmit}
-                okText="Submit"
-            >
-                <Input.TextArea
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="Enter reason for status change"
-                    rows={4}
-                />
-            </Modal>
-
-            <Modal
-                title="Provide Reason for Bulk Update"
-                open={bulkReasonModalVisible}
-                onCancel={() => setBulkReasonModalVisible(false)}
-                onOk={submitBulkStatusChange}
-                okText="Submit"
-            >
-                <Input.TextArea
-                    value={bulkReason}
-                    onChange={(e) => setBulkReason(e.target.value)}
-                    placeholder="Enter reason for bulk status change"
-                    rows={4}
-                />
-            </Modal>
-
-            <Modal
-                title={`Reasons for Batch: ${currentReasonsBatchName}`}
-                open={reasonsModalVisible}
-                onCancel={() => setReasonsModalVisible(false)}
-                footer={null}
-                width={400}
-            >
-                <Text>{currentReasons}</Text>
             </Modal>
         </div>
     );

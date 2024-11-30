@@ -1,8 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Dropdown, Menu, Button, Input } from "antd";
+import useLogout from "../hooks/Logout"; // Importar el hook de logout
 
 const NavBarMenu = ({ title, onAddCategory, onSearch, showSearch = true, showAdd = true }) => {
+    const logout = useLogout();  // Usar el hook de logout
+
     const operationsMenu = (
         <Menu>
             <Menu.Item disabled style={{ cursor: "not-allowed", color: "#bdbdbd" }}>Reabastecimiento</Menu.Item>
@@ -188,6 +191,30 @@ const NavBarMenu = ({ title, onAddCategory, onSearch, showSearch = true, showAdd
                         Settings
                     </Button>
                 </Dropdown>
+                {/* Botón de logout */}
+                <Button
+                    type="danger"
+                    onClick={logout}
+                    style={{
+                        marginLeft: "20px",
+                        color: "#fff",
+                        background: "#ff4d4f",
+                        fontWeight: "bold",
+                        border: "none",
+                        borderRadius: "8px",
+                        padding: "8px 16px",
+                        boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+                        transition: "transform 0.3s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "scale(1.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "scale(1)";
+                    }}
+                >
+                    Logout
+                </Button>
             </div>
         </div>
     );

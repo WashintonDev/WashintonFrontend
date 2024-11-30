@@ -292,28 +292,13 @@ const RestockProductsPage = () => {
     {
       title: 'Imagen',
       key: 'image',
-      render: (_, record) => {
-        const image = record.product_images && record.product_images.length > 0
-          ? record.product_images[0].image_path
-          : null;
-        return (
-          <Image
-            width={40}
-            src={
-              image
-                ? `https://washintonbackend.store/${image}`
-                : "https://via.placeholder.com/50"
-            }
-            preview={{
-              src: image
-                ? `https://washintonbackend.store/${image}`
-                : "https://via.placeholder.com/800",
-              title: record.name,
-            }}
-            style={{ cursor: 'pointer' }}
-          />
-        );
-      },
+      render: (_, record) => (
+        <Image
+          width={40}
+          src={record.image || 'https://via.placeholder.com/40'}
+          style={{ cursor: 'pointer' }}
+        />
+      ),
       width: 100,
       align: 'center',
     },
