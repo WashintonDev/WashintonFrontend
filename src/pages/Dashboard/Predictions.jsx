@@ -5,7 +5,7 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import '../../assets/styles/Predictions.css';
 import { BASE_API_LEARNING } from '../../services/ApisConfig';
-
+import SideBarAdmin from '../../components/SideBarAdmin';
 const { Content } = Layout;
 const { Option } = Select;
 
@@ -104,6 +104,7 @@ const Predictions = () => {
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
+            <SideBarAdmin />
             <Content style={{ padding: '24px' }}>
                 <Card title="Predictions Dashboard" style={{ marginBottom: '24px' }}>
                     <Form
