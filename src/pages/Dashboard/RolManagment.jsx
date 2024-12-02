@@ -37,7 +37,9 @@ import {
 } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pie } from '@ant-design/plots';
-import SideBarAdmin from '../../components/SideBarAdmin'; // Asegúrate de que esta ruta es correcta
+import SideBarAdmin from '../../components/SideBarAdmin';
+import { API_URL_ROLES } from '../../services/ApisConfig';
+
 const { Content } = Layout;
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -65,41 +67,26 @@ const RoleManagement = () => {
   const fetchRoles = async () => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const mockRoles = [
-        {
-          id: 1,
-          name: 'Administrador',
-          description: 'Control total del sistema',
-          permissions: [
-            'canManageUsers',
-            'canManageRoles',
-            'canManageInventory',
-            'canManageSales',
-            'canViewReports',
-            'canManageSuppliers',
-          ],
+      const response = await fetch(API_URL_ROLES, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
-          id: 2,
-          name: 'Vendedor',
-          description: 'Gestión de ventas e inventario',
-          permissions: [
-            'canManageInventory',
-            'canManageSales',
-            'canViewReports',
-          ],
-        },
-        {
-          id: 3,
-          name: 'Analista',
-          description: 'Visualización de reportes',
-          permissions: [
-            'canViewReports',
-          ],
-        },
-      ];
-      setRoles(mockRoles);
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al cargar los roles');
+      }
+
+      const data = await response.json();
+      const formattedRoles = data.map(role => ({
+        id: role.role_id,
+        name: role.name,
+        description: role.description || '',
+        permissions: JSON.parse(role.permissions),
+      }));
+
+      setRoles(formattedRoles);
     } catch (error) {
       notification.error({
         message: 'Error al cargar los roles',
@@ -156,12 +143,12 @@ const RoleManagement = () => {
     if (role) {
       setCurrentRole({
         ...role,
-        permissions: Object.keys(role.permissions).filter(key => role.permissions[key]),
+        permissions: role.permissions,
       });
       setIsEditing(true);
       form.setFieldsValue({
         ...role,
-        permissions: Object.keys(role.permissions).filter(key => role.permissions[key]),
+        permissions: role.permissions,
       });
     } else {
       setCurrentRole({
@@ -190,21 +177,41 @@ const RoleManagement = () => {
     try {
       const values = await form.validateFields();
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const permissions = values.permissions.reduce((acc, permission) => {
-        acc[permission] = true;
-        return acc;
-      }, {});
+      const permissions = JSON.stringify(values.permissions);
 
       if (isEditing) {
-        setRoles(roles.map(role => (role.id === currentRole.id ? { ...role, ...values, permissions } : role)));
+        const response = await fetch(`${API_URL_ROLES}${currentRole.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ...values, permissions }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al actualizar el rol');
+        }
+
+        setRoles(roles.map(role => (role.id === currentRole.id ? { ...role, ...values, permissions: JSON.parse(permissions) } : role)));
         notification.success({
           message: 'Rol actualizado exitosamente',
         });
       } else {
-        const newRole = { ...values, id: roles.length + 1, permissions };
-        setRoles([...roles, newRole]);
+        const response = await fetch(API_URL_ROLES, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ...values, permissions }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al crear el rol');
+        }
+
+        const newRole = await response.json();
+        setRoles([...roles, { ...newRole, permissions: JSON.parse(newRole.permissions) }]);
         notification.success({
           message: 'Rol creado exitosamente',
         });
@@ -230,7 +237,17 @@ const RoleManagement = () => {
       onOk: async () => {
         setLoading(true);
         try {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          const response = await fetch(`${API_URL_ROLES}${id}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Error al eliminar el rol');
+          }
+
           setRoles(roles.filter(role => role.id !== id));
           notification.success({
             message: 'Rol eliminado exitosamente',
@@ -449,22 +466,31 @@ const RoleManagement = () => {
               <Checkbox.Group style={{ width: '100%' }}>
                 <Row>
                   <Col span={12}>
-                    <Checkbox value="canManageUsers">Gestionar Usuarios</Checkbox>
+                    <Checkbox value="create_users">Crear Usuarios</Checkbox>
                   </Col>
                   <Col span={12}>
-                    <Checkbox value="canManageRoles">Gestionar Roles</Checkbox>
+                    <Checkbox value="delete_users">Eliminar Usuarios</Checkbox>
                   </Col>
                   <Col span={12}>
-                    <Checkbox value="canManageInventory">Gestionar Inventario</Checkbox>
+                    <Checkbox value="edit_users">Editar Usuarios</Checkbox>
                   </Col>
                   <Col span={12}>
-                    <Checkbox value="canManageSales">Gestionar Ventas</Checkbox>
+                    <Checkbox value="transferOrders">Transferir Pedidos</Checkbox>
                   </Col>
                   <Col span={12}>
-                    <Checkbox value="canViewReports">Ver Reportes</Checkbox>
+                    <Checkbox value="dispatch">Despachar</Checkbox>
                   </Col>
                   <Col span={12}>
-                    <Checkbox value="canManageSuppliers">Gestionar Proveedores</Checkbox>
+                    <Checkbox value="sales">Ventas</Checkbox>
+                  </Col>
+                  <Col span={12}>
+                    <Checkbox value="registerSales">Registrar Ventas</Checkbox>
+                  </Col>
+                  <Col span={12}>
+                    <Checkbox value="viewReports">Ver Reportes</Checkbox>
+                  </Col>
+                  <Col span={12}>
+                    <Checkbox value="suppliers">Proveedores</Checkbox>
                   </Col>
                 </Row>
               </Checkbox.Group>
