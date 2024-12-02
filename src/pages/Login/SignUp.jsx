@@ -5,6 +5,7 @@ import { auth } from "../../services/firebaseConfig";
 import axios from "axios";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useNavigate, Link } from "react-router-dom";
+import { API_URL_STORES,API_URL_ROLES } from "../../services/ApisConfig";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -12,16 +13,16 @@ const { Option } = Select;
 const SignUp = () => {
   const Navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [stores, setStores] = useState([]); // Para almacenar las tiendas
-  const [role, setRole] = useState(""); // Para gestionar el rol seleccionado
-  const [storeId, setStoreId] = useState(null); // Para gestionar el store_id seleccionado
+  const [stores, setStores] = useState([]); 
+  const [roles, setRoles] = useState([]); 
+  const [roleId, setRoleId] = useState(null); 
+  const [storeId, setStoreId] = useState(null); 
 
-  // Obtener las tiendas disponibles
   useEffect(() => {
     const fetchStores = async () => {
       try {
-        const response = await axios.get("https://washintonbackend.store/api/store"); // Suponiendo que esta es la URL correcta para obtener tiendas
-        setStores(response.data); // Suponiendo que la respuesta tiene un array de tiendas
+        const response = await axios.get(`${API_URL_STORES}`); 
+        setStores(response.data); 
       } catch (error) {
         console.error("Error fetching stores", error);
         message.error("Error fetching stores");
@@ -30,9 +31,23 @@ const SignUp = () => {
     fetchStores();
   }, []);
 
-  // Esta función se dispara cuando se cambia el rol
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await axios.get(`${API_URL_ROLES}`);
+        setRoles(response.data); 
+      } catch (error) {
+        console.error("Error fetching roles", error);
+        message.error("Error fetching roles");
+      }
+    };
+    fetchRoles();
+  }, []);
+
+
   const handleRoleChange = (value) => {
-    setRole(value);
+    setRoleId(value);
     if (value === "admin" || value === "logistics_coordinator" || value === "warehouse_employee" || value === "supplies_admin") {
       setStoreId(null); // Si el rol no requiere store, limpiamos el storeId
     }
@@ -44,13 +59,13 @@ const SignUp = () => {
       setLoading(true);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const firebase_user_ID = userCredential.user.uid;
-      
-      // Si el rol es uno de los roles de admin/logistics/warehouse/supplies, no se pasa store_id; si es uno de ventas, se usa el storeId
-      const store_id = role === "admin" || role === "logistics_coordinator" || role === "warehouse_employee" || role === "supplies_admin" ? null : storeId;
 
-      // Llamamos a la función para registrar el usuario en la base de datos
+   
+      const store_id = roleId === "admin" || roleId === "logistics_coordinator" || roleId === "warehouse_employee" || roleId === "supplies_admin" ? null : storeId;
+
+
       await registerUser({
-        first_name, last_name, email, password, phone, role, firebase_user_ID, store_id
+        first_name, last_name, email, password, phone, roleId, firebase_user_ID, store_id
       });
       message.success("User registered successfully");
       Navigate('/');
@@ -61,16 +76,16 @@ const SignUp = () => {
     }
   };
 
-  const registerUser = async ({ first_name, last_name, email, password, phone, role, firebase_user_ID, store_id }) => {
+  const registerUser = async ({ first_name, last_name, email, password, phone, roleId, firebase_user_ID, store_id }) => {
     try {
-      const location_type = role === "admin" || role === "logistics_coordinator" || role === "warehouse_employee" || role === "supplies_admin" ? "warehouse" : "store"; 
+      const location_type = roleId === "admin" || roleId === "logistics_coordinator" || roleId === "warehouse_employee" || roleId === "supplies_admin" ? "warehouse" : "store"; 
       const response = await axios.post('https://washintonbackend.store/api/user', {
         first_name,
         last_name,
         email,
         password,
         phone,
-        role,
+        role_id: roleId, // Enviar role_id
         location_type, 
         status: "active",
         store_id, 
@@ -95,7 +110,7 @@ const SignUp = () => {
       <div className="login-box">
         <Title level={3}>Enrolar Empleado</Title>
         <Form name="signup" onFinish={onFinish} className="login-form">
-          <Form.Item name="first_name" rules={[{ required: true, message: "Type Your First Name" }]}>
+          <Form.Item name="first_name" rules={[{ required: true, message: "Type Your First Name" }]} >
             <Input prefix={<UserOutlined />} placeholder="First Name" size="large" />
           </Form.Item>
 
@@ -129,40 +144,34 @@ const SignUp = () => {
             <Input.Password prefix={<LockOutlined />} placeholder="Confirm Password" size="large" />
           </Form.Item>
 
-          <Form.Item name="phone" rules={[{ required: true, message: "Please type your phone number" }, { len: 10, message: "Phone number must be 10 digits" },
-              { pattern: /^[0-9]{10}$/, message: "Phone number must be numeric" }
-            ]}>
+          <Form.Item name="phone" rules={[{ required: true, message: "Please type your phone number" }, { len: 10, message: "Phone number must be 10 digits" }, { pattern: /^[0-9]{10}$/, message: "Phone number must be numeric" }]}>
             <Input prefix={<PhoneOutlined />} placeholder="Phone Number" size="large" />
           </Form.Item>
 
           <Form.Item name="role" rules={[{ required: true, message: "Please select a role" }]}>
-            <Select placeholder="Select a role" size="large" onChange={handleRoleChange} value={role}>
-              <Option value="admin">Admin</Option>
-              <Option value="logistics_coordinator">Logistics Coordinator</Option>
-              <Option value="warehouse_employee">Warehouse Employee</Option>
-              <Option value="supplies_admin">Supplies Admin</Option>
-              <Option value="sales_supervisor">Sales Supervisor</Option>
-              <Option value="basic_employee">Basic Employee</Option>
+            <Select placeholder="Select a role" size="large" onChange={handleRoleChange} value={roleId}>
+              {roles.map((role) => (
+                <Option key={role.role_id} value={role.role_id}>{role.name}</Option>
+              ))}
             </Select>
           </Form.Item>
 
-          {role === "store" || role === "sales_supervisor" || role === "basic_employee" ? (
+          {roleId && roleId !== 1 && ( // Exclude "admin" or roles that don't need a store_id
             <Form.Item
               name="store_id"
-              rules={[{ required: role === "store" || role === "sales_supervisor" || role === "basic_employee", message: "Please select a store" }]}
-            >
+              rules={[{ required: roleId === "store" || roleId === "sales_supervisor" || roleId === "basic_employee", message: "Please select a store" }]}>
               <Select
                 placeholder="Select a store"
                 size="large"
-                value={storeId || undefined} // Asegurando que el valor se muestre correctamente, incluso cuando sea null
-                onChange={(value) => setStoreId(value)} // Aseguramos que el storeId se actualice
+                value={storeId || undefined} 
+                onChange={(value) => setStoreId(value)} 
               >
                 {stores.map((store) => (
                   <Option key={store.store_id} value={store.store_id}>{store.name}</Option>
                 ))}
               </Select>
             </Form.Item>
-          ) : null}
+          )}
 
           <Form.Item>
             <Button type="primary" htmlType="submit" className="login-form-button" size="large" block loading={loading}>

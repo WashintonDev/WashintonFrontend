@@ -124,6 +124,8 @@
   margin-left: auto;
   margin-right: auto;
   display:flow-root;
+  margin-left: 80px; /* Ajusta este valor según la altura del Navbar */
+  /* padding: 20px; */
 
 }
 

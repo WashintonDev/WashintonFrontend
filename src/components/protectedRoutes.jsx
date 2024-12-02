@@ -16,7 +16,7 @@ const ProtectedRoute = () => {
   }
 
   // Si el usuario es de tipo store, puede acceder solo a rutas de inventario
-  if (userRole === "store") {
+  if (userRole === "store" && userRole === "basic_employee") {
     // Si intenta acceder a algo fuera de /sales, lo redirigimos a /sales
     if (!location.pathname.includes("/sales")) {
       return <Navigate to="/sales" replace />;
@@ -43,7 +43,6 @@ const ProtectedRoute = () => {
     }
     return <Outlet />;
   }
-
 
   return <Navigate to="/login" replace />;
 };

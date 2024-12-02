@@ -5,9 +5,7 @@ import Navbar from '../../components/Navbar';
 import AdminSideB from '../../components/AdminSidebar';
 import { Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-
-const API_URL_EMPLOYEES = 'https://washintonbackend.store/api/user/';
-const API_URL_STORES = 'https://washintonbackend.store/api/store';
+import { API_URL_USERS, API_URL_STORES } from '../../services/apisConfig';
 
 const UserManagement = () => {
     const [employees, setEmployees] = useState([]);
@@ -23,7 +21,7 @@ const UserManagement = () => {
     // Función para obtener empleados
     const fetchEmployees = async () => {
         try {
-            const response = await fetch(API_URL_EMPLOYEES);
+            const response = await fetch(API_URL_USERS);
             if (!response.ok) throw new Error('Error fetching employees');
             const data = await response.json();
             setEmployees(data);
@@ -59,14 +57,14 @@ const UserManagement = () => {
         try {
             const values = await form.validateFields();
             if (editingEmployee) {
-                await fetch(`${API_URL_EMPLOYEES}${editingEmployee.id_usuario}/`, {
+                await fetch(`${API_URL_USERS}${editingEmployee.id_usuario}/`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(values),
                 });
                 notification.success({ message: 'Empleado actualizado exitosamente' });
             } else {
-                await fetch(API_URL_EMPLOYEES, {
+                await fetch(API_URL_USERS, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(values),
@@ -83,7 +81,7 @@ const UserManagement = () => {
     // Función para manejar la eliminación
     const handleDelete = async (id) => {
         try {
-            await fetch(`${API_URL_EMPLOYEES}${id}/`, { method: 'DELETE' });
+            await fetch(`${API_URL_USERS}${id}/`, { method: 'DELETE' });
             notification.success({ message: 'Empleado eliminado exitosamente' });
             fetchEmployees();
         } catch (error) {
@@ -139,8 +137,10 @@ const UserManagement = () => {
             render: (text) => <Tag color="green">{text}</Tag>,
         },
         {
+
+            
             title: 'Rol',
-            dataIndex: 'role',
+            dataIndex: ['role', 'name'],
             key: 'role',
             filters: [
                 { text: 'Admin', value: 'admin' },

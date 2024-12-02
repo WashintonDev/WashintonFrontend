@@ -588,6 +588,7 @@ const ProductPage = () => {
         title="Products"
         buttonText="Add Product"
         onAddCategory={handleAdd}
+        onSearch={setSearchText}
       />
       <div
       style={{

@@ -8,6 +8,7 @@ const fetchUserRole = async (firebaseUserID) => {
     );
 
     const user = userResponse.data;
+    console.log(user);
 
     // Verificar que el usuario tenga rol
     if (user && user.role) {
@@ -15,17 +16,22 @@ const fetchUserRole = async (firebaseUserID) => {
       const roleName = user.role.name;
 
       // Almacenar el nombre del rol en localStorage
-      localStorage.setItem('role', roleName);
+      localStorage.setItem("role", roleName);
 
-      return roleName;  // Retorna solo el nombre del rol
+      return roleName; // Retorna solo el nombre del rol
     } else {
       throw new Error("Rol no encontrado para el usuario");
     }
   } catch (error) {
-    console.error("Error al obtener el usuario o rol:", error.response?.data || error.message);
+    console.error(
+      "Error al obtener el usuario o rol:",
+      error.response?.data || error.message
+    );
     return {
       success: false,
-      message: error.response?.data?.message || "Error desconocido al obtener el usuario",
+      message:
+        error.response?.data?.message ||
+        "Error desconocido al obtener el usuario",
     };
   }
 };

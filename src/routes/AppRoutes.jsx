@@ -7,6 +7,8 @@ import Inventory from "../pages/Inventory/Inventory";
 import Sales from "../pages/Sales/Sales";
 import TransferOrders from "../pages/TransferOrders/TransferOrders";
 import Dispatch from "../pages/Dispatch/Dispatch";
+import Login from "../pages/Login/Login";
+import SignUp from "../pages/Login/SignUp";
 import { UserProvider } from '../services/userContxt';
 import Admin from '../pages/Dashboard/Admin';
 
