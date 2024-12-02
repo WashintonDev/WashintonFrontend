@@ -4,7 +4,7 @@ import axios from 'axios';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import '../../assets/styles/Predictions.css';
-import SideBarAdmin from '../../components/SideBarAdmin';
+import { BASE_API_LEARNING } from '../../services/ApisConfig';
 
 const { Content } = Layout;
 const { Option } = Select;
@@ -24,7 +24,7 @@ const Predictions = () => {
         setLoading(true);
         try {
             for (let i = 0; i < endpoints.length; i++) {
-                const response = await axios.post(`https://learning.washinton.store/${endpoints[i]}`, data, {
+                const response = await axios.post(`${BASE_API_LEARNING}${endpoints[i]}`, data, {
                     headers: {
                         'Content-Type': 'application/json',
                     },
@@ -104,7 +104,6 @@ const Predictions = () => {
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
-            <SideBarAdmin />
             <Content style={{ padding: '24px' }}>
                 <Card title="Predictions Dashboard" style={{ marginBottom: '24px' }}>
                     <Form

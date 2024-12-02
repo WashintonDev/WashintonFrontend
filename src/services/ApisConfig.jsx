@@ -2,7 +2,7 @@
 export const BASE_API_URL = import.meta.env.VITE_API_URL;
 const LOCAL_API_URL = import.meta.env.VITE_API_URL_LOCALHOST;
 const BASE_API_URL_TESTING = 'http://0.0.0.0:8000/api/'
-
+export const BASE_API_LEARNING = 'https://learning.washinton.store/'
 // Product Images API URLs
 export const API_URL_PRODUCT_IMAGES = (productId) => `${BASE_API_URL}product/${productId}/images/`;
 export const API_URL_PRODUCT_IMAGE_DELETE = (imageId) => `${BASE_API_URL}product/image/${imageId}/`;
