@@ -1,4 +1,3 @@
-
 import { API_URL_SUPPLIERS_GLOBAL_HISTORY } from "../services/ApisConfig";
 import { useState, useEffect } from "react";
 const useSupplierGlobalHistory = () => {
