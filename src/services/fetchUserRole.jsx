@@ -4,7 +4,7 @@ const fetchUserRole = async (firebaseUserID) => {
   try {
     // Obtener el usuario por Firebase ID
     const userResponse = await axios.get(
-      `http://127.0.0.1:8000/api/user/firebase/${firebaseUserID}`
+      `https://washintonbackend.store/api/user/firebase/${firebaseUserID}`
     );
 
     const user = userResponse.data;

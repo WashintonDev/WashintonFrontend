@@ -13,12 +13,11 @@ const SalesReport = () => {
   const [selectedStore, setSelectedStore] = useState(1);
   const [loading, setLoading] = useState(true);
   const [selectedSaleDetails, setSelectedSaleDetails] = useState([]);
-  const [totalSaleAmount, setTotalSaleAmount] = useState(0); 
+  const [totalSaleAmount, setTotalSaleAmount] = useState(0);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [dashboardData, setDashboardData] = useState([]); 
+  const [dashboardData, setDashboardData] = useState([]);
   const [isDashboardVisible, setIsDashboardVisible] = useState(false);
-  const [storeName, setStoreName] = useState('Todas las Tiendas'); // Estado para el nombre de la tienda
-
+  const [storeName, setStoreName] = useState('Todas las Tiendas');
 
   useEffect(() => {
     const fetchSalesAndStores = async () => {
@@ -38,12 +37,10 @@ const SalesReport = () => {
         const storesData = await storesResponse.json();
         setStores(storesData);
 
- 
         const initialFilteredSales = validatedSales.filter(
           (sale) => sale.store?.store_id === 1
         );
         setFilteredSales(initialFilteredSales);
-
 
         const groupedData = initialFilteredSales.reduce((acc, sale) => {
           const date = sale.sale_date.split(' ')[0];
@@ -53,8 +50,12 @@ const SalesReport = () => {
           acc[date].total += sale.total_amount;
           return acc;
         }, {});
-        setDashboardData(Object.values(groupedData));
 
+        const sortedDashboardData = Object.values(groupedData).sort(
+          (a, b) => new Date(a.date) - new Date(b.date)
+        );
+
+        setDashboardData(sortedDashboardData);
         setLoading(false);
       } catch (error) {
         notification.error({
@@ -73,12 +74,10 @@ const SalesReport = () => {
     if (storeId) {
       const filtered = sales.filter((sale) => sale.store?.store_id === storeId);
       setFilteredSales(filtered);
-  
-      // Obtén el nombre de la tienda seleccionada
+
       const selectedStore = stores.find((store) => store.store_id === storeId);
       setStoreName(selectedStore ? selectedStore.name : 'Sin Asignar');
-  
-      // Agrupa los datos por día
+
       const groupedData = filtered.reduce((acc, sale) => {
         const date = sale.sale_date.split(' ')[0];
         if (!acc[date]) {
@@ -87,12 +86,16 @@ const SalesReport = () => {
         acc[date].total += sale.total_amount;
         return acc;
       }, {});
-  
-      setDashboardData(Object.values(groupedData));
+
+      const sortedDashboardData = Object.values(groupedData).sort(
+        (a, b) => new Date(a.date) - new Date(b.date)
+      );
+
+      setDashboardData(sortedDashboardData);
     } else {
       setFilteredSales(sales);
       setDashboardData([]);
-      setStoreName('Todas las Tiendas'); // Restablece a todas las tiendas
+      setStoreName('Todas las Tiendas');
     }
   };
 
@@ -220,7 +223,7 @@ const SalesReport = () => {
         bordered
         pagination={{ pageSize: 10 }}
       />
-      <Modal 
+      <Modal
         title="Detalles de la Venta"
         visible={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
@@ -231,7 +234,7 @@ const SalesReport = () => {
         ]}
         width={600}
       >
-        <Table 
+        <Table
           dataSource={selectedSaleDetails}
           columns={detailColumns}
           rowKey="sale_detail_id"
@@ -253,7 +256,7 @@ const SalesReport = () => {
       </Modal>
 
       <Modal
-        title={storeName}
+        title={`Dashboard de Ventas - ${storeName}`}
         visible={isDashboardVisible}
         onCancel={closeDashboard}
         footer={[
@@ -263,29 +266,46 @@ const SalesReport = () => {
         ]}
         width={850}
       >
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={dashboardData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" 
-                       label={{
-                        value: 'Fecha',
-                        position: 'insideBottom',
-                        offset: -5,
-                        style: { fontSize: '16px', fontWeight: 'bold', fill: '#333' },
-                      }} 
-            />
-            <YAxis 
-                  label={{
-                    value: 'Dinero',
-                    angle: -90,
-                    position: 'insideLeft',
-                    style: { fontSize: '16px', fontWeight: 'bold', fill: '#333' },
-                  }} 
-            />
-            <Tooltip />
-            <Bar dataKey="total" fill="#8884d8" />
-          </BarChart>
-        </ResponsiveContainer>
+<ResponsiveContainer width="100%" height={450}>
+  <BarChart
+    data={dashboardData}
+    margin={{ top: 20, right: 20, bottom: 100, left: 20 }}
+    barCategoryGap="20%"
+  >
+    <CartesianGrid strokeDasharray="3 3" />
+    <XAxis
+      dataKey="date"
+      interval={0} 
+      tick={{
+        angle: -45, 
+        textAnchor: 'end',
+        fontSize: 14,
+      }}
+      tickMargin={20}
+      label={{
+        value: 'Fecha',
+        position: 'insideBottom',
+        offset: -80,
+        style: { fontSize: '16px', fontWeight: 'bold', fill: '#333' },
+      }}
+    />
+    <YAxis
+      label={{
+        value: 'Dinero',
+        angle: -90,
+        position: 'insideLeft',
+        style: { fontSize: '16px', fontWeight: 'bold', fill: '#333' },
+      }}
+    />
+    <Tooltip
+      formatter={(value) => `$${value.toFixed(2)}`}
+      labelFormatter={(label) => `Fecha: ${label}`}
+    />
+    <Bar dataKey="total" fill="#8884d8" />
+  </BarChart>
+</ResponsiveContainer>
+
+
       </Modal>
     </div>
   );
