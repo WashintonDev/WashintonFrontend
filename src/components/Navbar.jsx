@@ -6,14 +6,6 @@ const NavBarMenu = ({ title, onAddCategory, onSearch, showSearch = true, showAdd
     const logout = useLogout();
     const operationsMenu = (
         <Menu>
-            <Menu.Item disabled style={{ cursor: "not-allowed", color: "#bdbdbd" }}>Reabastecimiento</Menu.Item>
-            <Menu.Item>
-                <Link to="/inventory/request-restock">Restock</Link>
-            </Menu.Item>
-            <Menu.Item disabled style={{ cursor: "not-allowed", color: "#bdbdbd" }}>Traslados</Menu.Item>
-            <Menu.Item>
-                <Link to="/inventory/receipts">Receipts</Link>
-            </Menu.Item>
             <Menu.Item disabled style={{ cursor: "not-allowed", color: "#bdbdbd" }}>Batches</Menu.Item>
             <Menu.Item>
                 <Link to="/inventory/product-batch">Batches</Link>
@@ -21,16 +13,6 @@ const NavBarMenu = ({ title, onAddCategory, onSearch, showSearch = true, showAdd
         </Menu>
     );
 
-    const reportsMenu = (
-        <Menu>
-            <Menu.Item>
-                <Link to="/inventory/stock">Stock</Link>
-            </Menu.Item>
-            <Menu.Item>
-                <Link to="/inventory/operation-log">Movement History</Link>
-            </Menu.Item>
-        </Menu>
-    );
 
     const settingsMenu = (
         <Menu>
@@ -43,18 +25,18 @@ const NavBarMenu = ({ title, onAddCategory, onSearch, showSearch = true, showAdd
             </Menu.Item>
             <Menu.Item disabled style={{ cursor: "not-allowed", color: "#bdbdbd" }}>Products</Menu.Item>
             <Menu.Item>
+                <Link to="/inventory/product">Products</Link>
+            </Menu.Item>
+            <Menu.Item>
+                <Link to="/inventory">Inventory</Link>
+            </Menu.Item>
+            <Menu.Item>
                 <Link to="/inventory/category">Categories</Link>
             </Menu.Item>
             <Menu.Item>
                 <Link to="/sales/">Sales</Link>
             </Menu.Item>
             <Menu.Item><Link to="/sales/sales-report">Sales report</Link></Menu.Item>
-            <Menu.Item>
-                <Link to="/inventory/product">Products</Link>
-            </Menu.Item>
-            <Menu.Item>
-                <Link to="/inventory">Inventory</Link>
-            </Menu.Item>
             <Menu.Item>
                 <Link to="/inventory/restock-products">Restock Products</Link>
             </Menu.Item>
@@ -149,32 +131,7 @@ const NavBarMenu = ({ title, onAddCategory, onSearch, showSearch = true, showAdd
               Operations
             </Button>
           </Dropdown>
-          <Dropdown
-            overlay={reportsMenu}
-            placement="bottomLeft"
-            trigger={["click"]}
-          >
-            <Button
-              style={{
-                background: "#fff",
-                border: "1px solid #5A9BD6",
-                color: "#5A9BD6",
-                fontWeight: "bold",
-                borderRadius: "8px",
-                transition: "all 0.3s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#5A9BD6";
-                e.currentTarget.style.color = "#fff";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#fff";
-                e.currentTarget.style.color = "#5A9BD6";
-              }}
-            >
-              Reports
-            </Button>
-          </Dropdown>
+
           <Dropdown
             overlay={settingsMenu}
             placement="bottomLeft"
