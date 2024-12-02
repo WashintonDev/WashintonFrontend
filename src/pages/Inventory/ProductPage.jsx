@@ -26,6 +26,7 @@ import {
   DollarOutlined,
   UploadOutlined,
   PictureOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import Navbar from "../../components/Navbar";
 
@@ -74,9 +75,9 @@ const ProductPage = () => {
   const [searchText, setSearchText] = useState("");
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
   const [removeImage, setRemoveImage] = useState(false);
-  const [filterSupplier, setFilterSupplier] = useState(null);
-  const [filterCategory, setFilterCategory] = useState(null);
-  const [filterType, setFilterType] = useState(null);
+  const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
+  const [selectedProductDetails, setSelectedProductDetails] = useState(null);
+  const { confirm } = Modal;
   
   useEffect(() => {
     fetchProducts();
@@ -97,6 +98,35 @@ const ProductPage = () => {
       });
     }
   };
+
+  const showDeleteConfirm = (product_id, product_name) => {
+    confirm({
+      title: "Are you sure you want to delete this product?",
+      icon: <ExclamationCircleOutlined style={{ color: "red" }} />,
+      content: `Product: ${product_name}`,
+      okText: "Yes",
+      okType: "danger",
+      cancelText: "No",
+      centered: true,
+      onOk() {
+        handleDelete(product_id);
+      },
+      onCancel() {
+        console.log("Cancelled deletion");
+      },
+    });
+  };
+
+  const handleOpenDetailsModal = (product) => {
+    setSelectedProductDetails(product);
+    setIsDetailsModalVisible(true);
+  };
+  
+  const handleCloseDetailsModal = () => {
+    setIsDetailsModalVisible(false);
+    setSelectedProductDetails(null);
+  };
+  
 
   const fetchSuppliers = async () => {
     try {
@@ -346,7 +376,7 @@ const ProductPage = () => {
     dataIndex: "name",
     key: "name",
     ellipsis: true,
-    width: 300,
+    width: 200,
     render: (text) => (
       <span
         style={{
@@ -560,7 +590,7 @@ const ProductPage = () => {
     key: "actions",
     render: (_, record) => (
       <Space size="middle">
-        <Tooltip title="Quick Edit">
+        <Tooltip title="Edit">
           <Button
             type="link"
             icon={<EditOutlined />}
@@ -572,8 +602,37 @@ const ProductPage = () => {
             danger
             type="link"
             icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.product_id)}
+            onClick={() => showDeleteConfirm(record.product_id, record.name)}
           />
+        </Tooltip>
+        <Tooltip title="View Details">
+          <Button
+            onClick={() => handleOpenDetailsModal(record)}
+            style={{
+              background: "#356CA0",
+              color: "#ffffff",
+              fontWeight: "bold",
+              padding: "8px 20px",
+              borderRadius: "5px",
+              border: "none",
+              transition: "all 0.3s ease",
+              boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background =
+                "linear-gradient(90deg, #356CA0 0%, #274D73 100%)";
+              e.currentTarget.style.boxShadow =
+                "0px 6px 10px rgba(0, 0, 0, 0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background =
+                "linear-gradient(90deg, #4b6cb7 0%, #182848 100%)";
+              e.currentTarget.style.boxShadow =
+                "0px 4px 6px rgba(0, 0, 0, 0.1)";
+            }}
+          >
+            Details
+          </Button>
         </Tooltip>
       </Space>
     ),
@@ -1141,6 +1200,208 @@ const ProductPage = () => {
       </Select>
     </Form.Item>
   </Form>
+</Modal>
+<Modal
+  title={
+    <div
+      style={{
+        fontSize: "22px",
+        fontWeight: "bold",
+        color: "#ffffff",
+        textAlign: "center",
+        padding: "10px 0",
+        background: "linear-gradient(90deg, #4b6cb7 0%, #182848 100%)",
+        borderRadius: "10px",
+        boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.2)",
+      }}
+    >
+      Product Details
+    </div>
+  }
+  visible={isDetailsModalVisible}
+  onCancel={handleCloseDetailsModal}
+  footer={[
+    <Button
+      key="close"
+      onClick={handleCloseDetailsModal}
+      style={{
+        background: "linear-gradient(90deg, #356CA0 0%, #274D73 100%)",
+        color: "#ffffff",
+        border: "none",
+        fontWeight: "bold",
+        padding: "8px 20px",
+        borderRadius: "5px",
+      }}
+    >
+      Close
+    </Button>,
+  ]}
+  centered
+  width={1000}
+  bodyStyle={{
+    background: "#f9f9f9",
+    borderRadius: "10px",
+    boxShadow: "0px 4px 15px rgba(0, 0, 0, 0.1)",
+    padding: "20px",
+  }}
+>
+  {selectedProductDetails && (
+    <div style={{ display: "flex", gap: "20px" }}>
+      {/* Lista de imágenes a la izquierda */}
+      <div
+        style={{
+          flex: "1",
+          maxWidth: "120px",
+          overflowY: "auto",
+          borderRight: "1px solid #ddd",
+          paddingRight: "10px",
+        }}
+      >
+        {selectedProductDetails.product_images?.map((image, index) => (
+          <div
+            key={index}
+            style={{
+              padding: "5px",
+              marginBottom: "10px",
+              border: "1px solid #ddd",
+              borderRadius: "8px",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.boxShadow =
+                "0px 6px 10px rgba(0, 0, 0, 0.2)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.boxShadow =
+                "0px 4px 6px rgba(0, 0, 0, 0.1)")
+            }
+            onClick={() =>
+              setSelectedProductDetails((prev) => ({
+                ...prev,
+                mainImage: `https://washintonbackend.store/${image.image_path}`,
+              }))
+            }
+          >
+            <Image
+              src={`https://washintonbackend.store/${image.image_path}`}
+              alt={`Product image ${index + 1}`}
+              width={100}
+              height={100}
+              preview={false}
+              style={{
+                borderRadius: "5px",
+                objectFit: "cover",
+                display: "block",
+              }}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Imagen principal */}
+      <div
+        style={{
+          flex: "2",
+          textAlign: "center",
+          padding: "10px",
+        }}
+      >
+        <Image
+          src={
+            selectedProductDetails.mainImage ||
+            `https://washintonbackend.store/${selectedProductDetails.product_images?.[0]?.image_path}`
+          }
+          alt={selectedProductDetails.name}
+          style={{
+            maxWidth: "100%",
+            maxHeight: "400px",
+            objectFit: "contain",
+            borderRadius: "10px",
+            boxShadow: "0px 8px 15px rgba(0, 0, 0, 0.2)",
+            cursor: "pointer",
+          }}
+          preview={{
+            src:
+              selectedProductDetails.mainImage ||
+              `https://washintonbackend.store/${selectedProductDetails.product_images?.[0]?.image_path}`,
+          }}
+        />
+      </div>
+
+      {/* Detalles del producto */}
+      <div style={{ flex: "3", padding: "10px 20px" }}>
+        <h2
+          style={{
+            marginBottom: "10px",
+            fontSize: "24px",
+            fontWeight: "bold",
+            color: "#182848",
+          }}
+        >
+          {selectedProductDetails.name}
+        </h2>
+        <Tag
+          color="orange"
+          style={{
+            fontSize: "14px",
+            padding: "5px 10px",
+            marginBottom: "15px",
+            display: "inline-block",
+            borderRadius: "5px",
+          }}
+        >
+          SKU: {selectedProductDetails.sku}
+        </Tag>
+        <p style={{ fontSize: "18px", marginBottom: "10px" }}>
+          <strong>Price:</strong>{" "}
+          <span
+            style={{
+              color: "#4CAF50",
+              fontSize: "20px",
+              fontWeight: "bold",
+            }}
+          >
+            <DollarOutlined style={{ marginRight: "5px" }} />
+            ${selectedProductDetails.price}
+          </span>
+        </p>
+        <p style={{ fontSize: "16px", marginBottom: "10px" }}>
+          <strong>Description:</strong>{" "}
+          {selectedProductDetails.description || "No description available"}
+        </p>
+        <p style={{ fontSize: "16px", marginBottom: "10px" }}>
+          <strong>Brand:</strong> {selectedProductDetails.brand}
+        </p>
+        <p style={{ fontSize: "16px", marginBottom: "10px" }}>
+          <strong>Category:</strong>{" "}
+          {categories.find(
+            (cat) => cat.category_id === selectedProductDetails.category_id
+          )?.name || "Unknown"}
+        </p>
+        <p style={{ fontSize: "16px", marginBottom: "10px" }}>
+          <strong>Supplier:</strong>{" "}
+          {suppliers.find(
+            (sup) => sup.supplier_id === selectedProductDetails.supplier_id
+          )?.name || "Unknown"}
+        </p>
+        <p style={{ fontSize: "16px", marginBottom: "10px" }}>
+          <strong>Status:</strong>{" "}
+          <Tag
+            color={selectedProductDetails.status === "active" ? "green" : "red"}
+            style={{
+              fontSize: "14px",
+              padding: "5px 10px",
+              borderRadius: "5px",
+            }}
+          >
+            {selectedProductDetails.status}
+          </Tag>
+        </p>
+      </div>
+    </div>
+  )}
 </Modal>
 
 
