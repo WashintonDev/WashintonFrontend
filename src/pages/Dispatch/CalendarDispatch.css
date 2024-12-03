@@ -37,8 +37,21 @@ body {
     background-color: #8300b3 !important;
 }
 
-.event-pending {
+.event-delivering {
+    background-color: rgb(149, 0, 255) !important;
+    color: #fff !important;
+}
+.event-cancelled {
     background-color: rgb(255, 0, 0) !important;
+    color: #fff !important;
+}
+.event-rejected {
+    background-color: rgb(23, 21, 21) !important;
+    color: #fff !important;
+}
+
+.event-approving {
+    background-color: rgb(22, 214, 15) !important;
     color: #fff !important;
 }
 

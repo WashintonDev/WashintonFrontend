@@ -272,11 +272,18 @@ const filteredEvents = events.filter((event) => {
             style={{ width: 200, marginLeft: 10 }}
           >
             <Option value="All">Todos</Option>
-            <Option value="Pending">Pendientes</Option>
-            <Option value="Delivered">Entregados</Option>
+            {/* <Option value="Pending">Pendientes</Option> */}
+            <Option value="Rejected">Rejected</Option>
+            <Option value="Approving">Approving</Option>
+            <Option value="Cancelled">Cancelled</Option>
+            <Option value="Delivering">Delivering</Option>
+            <Option value="Delivered">Delivered</Option>
           </Select>
-          <label htmlFor="date-filter" style={{ marginLeft: 20, marginRight:20 }}>
-            Filtrar por Fechas: 
+          <label
+            htmlFor="date-filter"
+            style={{ marginLeft: 20, marginRight: 20 }}
+          >
+            Filtrar por Fechas:
           </label>
           <RangePicker onChange={handleDateRangeChange} />
         </div>
@@ -320,8 +327,14 @@ const filteredEvents = events.filter((event) => {
           eventClassNames={(arg) => {
             if (arg.event.status === "Delivered") {
               return "event-delivered";
-            } else if (arg.event.status === "Pending") {
-              return "event-pending";
+            } else if (arg.event.status === "Delivering") {
+              return "event-delivering";
+            } else if (arg.event.status === "Cancelled") {
+              return "event-cancelled";
+            } else if (arg.event.status === "Rejected") {
+              return "event-rejected";
+            } else if (arg.event.status === "Approving") {
+              return "event-approving";
             }
             return "not-event";
           }}
