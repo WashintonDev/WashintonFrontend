@@ -47,6 +47,19 @@ const RoleManagement = () => {
             setLoading(false);
         }
     };
+    const fetchRoles = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch(API_URL_ROLES);
+            if (!response.ok) throw new Error('Error al obtener roles');
+            const rolesData = await response.json();
+            setRoles(rolesData);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleOpenModal = () => setOpenModal(true);
     const handleCloseModal = () => setOpenModal(false);
@@ -106,6 +119,11 @@ const RoleManagement = () => {
                 method: 'DELETE',
             });
 
+            if (!response.ok) throw new Error('Error al eliminar el rol');
+
+            fetchRoles(); // Actualizar la lista después de la eliminación
+            message.success('Rol eliminado con éxito');
+            setConfirmDeleteModalVisible(false); // Cerrar el modal de confirmación
             if (!response.ok) throw new Error('Error al eliminar el rol');
 
             fetchRoles(); // Actualizar la lista después de la eliminación

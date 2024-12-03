@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Select, Button, Space, Typography } from 'antd';
+import Navbar from '../../components/Navbar';
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -65,6 +66,7 @@ const SalesByStoreChart = () => {
 
     return (
         <div style={{ padding: '20px' }}>
+        <Navbar title="Sales Chart" showSearch={false} showAdd={false} />
             <Title level={2} style={{ textAlign: 'center', marginBottom: '20px' }}>
                 Total de Ventas por Tienda
             </Title>
