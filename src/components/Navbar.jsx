@@ -10,6 +10,10 @@ const NavBarMenu = ({ title, onAddCategory, onSearch, showSearch = true, showAdd
             <Menu.Item>
                 <Link to="/inventory/product-batch">Batches</Link>
             </Menu.Item>
+            <Menu.Item disabled style={{ cursor: "not-allowed", color: "#bdbdbd" }}>Transfers</Menu.Item>
+            <Menu.Item>
+                <Link to="/transfer-orders">Transfer Products</Link>
+            </Menu.Item>
         </Menu>
     );
 
@@ -22,6 +26,9 @@ const NavBarMenu = ({ title, onAddCategory, onSearch, showSearch = true, showAdd
             </Menu.Item>
             <Menu.Item>
                 <Link to="/inventory/store">Stores</Link>
+            </Menu.Item>
+            <Menu.Item>
+                <Link to="/suppliers">Suppliers</Link>
             </Menu.Item>
             <Menu.Item disabled style={{ cursor: "not-allowed", color: "#bdbdbd" }}>Products</Menu.Item>
             <Menu.Item>
