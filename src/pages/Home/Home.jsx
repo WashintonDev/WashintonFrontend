@@ -100,7 +100,7 @@ export default function Home() {
             <FeatureCard
               icon={<ClockCircleOutlined className="feature-icon" style={{ color: '#4169e1', fontSize: '2em' }} />}
               title="Automatic Alerts"
-              description="Receive notifications about low inventory levels and products nearing expiration."
+              description="Receive notifications about low inventory levels."
             />
             <FeatureCard
               icon={<MobileOutlined className="feature-icon" style={{ color: '#4169e1', fontSize: '2em' }} />}
