@@ -73,7 +73,7 @@ const ProductBatchPage = () => {
     };
 
     const filterAndSortBatches = () => {
-        const filtered = batches.filter(batch => batch.batch_name.toLowerCase().includes(searchText.toLowerCase()));
+        const filtered = batches.filter(batch => batch.batch_name && batch.batch_name.toLowerCase().includes(searchText.toLowerCase()));
         const sorted = filtered.sort((a, b) => {
             const statusOrder = ['pending', 'in_process', 'received', 'cancelled'];
             return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
@@ -133,8 +133,8 @@ const ProductBatchPage = () => {
                 body: JSON.stringify(body),
             });
     
-            setBatches(batches.map(batch => batch.batch_id === batchId ? updatedBatch : batch));
             notification.success({ message: 'Status updated successfully' });
+            fetchBatches(); // Fetch batches again to update the table
         } catch (error) {
             console.error(error);
             notification.error({ message: 'Failed to update status' });
@@ -172,7 +172,7 @@ const ProductBatchPage = () => {
                 body: JSON.stringify({ batches: batchesToUpdate }),
             });
     
-            fetchBatches();
+            fetchBatches(); // Fetch batches again to update the table
             notification.success({ message: 'Bulk status updated successfully' });
             setSelectedBatchIds([]);
             setBulkReason('');
@@ -319,7 +319,7 @@ const ProductBatchPage = () => {
 
             <Modal
                 title={<Title level={4}>Products in Batch: {selectedBatchName}</Title>}
-                visible={productsModalVisible}
+                open={productsModalVisible}
                 onCancel={() => setProductsModalVisible(false)}
                 footer={null}
                 width={800}
@@ -333,7 +333,7 @@ const ProductBatchPage = () => {
 
             <Modal
                 title={`Code: ${showBarcode ? 'Barcode' : 'QR'} - ${selectedBatchName}`}
-                visible={codeModalVisible}
+                open={codeModalVisible}
                 onCancel={() => setCodeModalVisible(false)}
                 footer={null}
                 width={400}
