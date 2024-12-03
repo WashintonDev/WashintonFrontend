@@ -17,6 +17,7 @@ const { Title, Text } = Typography;
 
 const ProductBatchPage = () => {
     const [batches, setBatches] = useState([]);
+    const [filteredBatches, setFilteredBatches] = useState([]);
     const [selectedProducts, setSelectedProducts] = useState([]);
     const [productsModalVisible, setProductsModalVisible] = useState(false);
     const [codeModalVisible, setCodeModalVisible] = useState(false);
@@ -38,10 +39,15 @@ const ProductBatchPage = () => {
     const [reasonsModalVisible, setReasonsModalVisible] = useState(false);
     const [currentReasons, setCurrentReasons] = useState('');
     const [currentReasonsBatchName, setCurrentReasonsBatchName] = useState('');
+    const [searchText, setSearchText] = useState('');
 
     useEffect(() => {
         fetchBatches();
     }, []);
+
+    useEffect(() => {
+        filterAndSortBatches();
+    }, [batches, searchText]);
 
     const handleFetch = async (url, options = {}) => {
         try {
@@ -64,6 +70,15 @@ const ProductBatchPage = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const filterAndSortBatches = () => {
+        const filtered = batches.filter(batch => batch.batch_name.toLowerCase().includes(searchText.toLowerCase()));
+        const sorted = filtered.sort((a, b) => {
+            const statusOrder = ['pending', 'in_process', 'received', 'cancelled'];
+            return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
+        });
+        setFilteredBatches(sorted);
     };
 
     const fetchProductsInBatch = async (batchId) => {
@@ -260,6 +275,12 @@ const ProductBatchPage = () => {
             <Navbar title="Product Batches" showSearch={false} showAdd={false} />
             <div style={{ padding: '20px', maxWidth: '80%', margin: '0 auto' }}>
                 <Space style={{ marginBottom: 16 }}>
+                    <Input
+                        placeholder="Search by batch name"
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        style={{ width: 200 }}
+                    />
                     <Select
                         value={bulkStatus}
                         onChange={setBulkStatus}
@@ -282,13 +303,13 @@ const ProductBatchPage = () => {
                 </Space>
                 <Spin spinning={loading}>
                     <Table
-                        dataSource={batches}
+                        dataSource={filteredBatches}
                         columns={columns}
                         rowKey="batch_id"
                         pagination={{
                             current: pagination.current,
                             pageSize: pagination.pageSize,
-                            total: batches.length,
+                            total: filteredBatches.length,
                             onChange: (page) => setPagination({ ...pagination, current: page }),
                         }}
                         style={{ marginTop: 16 }}

@@ -13,16 +13,17 @@ const UserRoleAssignment = () => {
   const [selectedRole, setSelectedRole] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [currentUserRole, setCurrentUserRole] = useState(""); // Para guardar el rol actual del usuario
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const usersResponse = await axios.get(API_URL_USERS);
       const rolesResponse = await axios.get(API_URL_ROLES);
-      // Verificar que las respuestas son JSON
+      
       if (usersResponse.headers["content-type"].includes("application/json")) {
         const filteredUsers = usersResponse.data.filter(
-          (user) => !user.role_id // Filtrar usuarios que no tienen role_id asignado
+          (user) => user.role_id // Filtrar usuarios que ya tienen role_id asignado
         );
         setUsers(filteredUsers);
       } else {
@@ -40,6 +41,18 @@ const UserRoleAssignment = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Obtener el rol actual cuando un usuario es seleccionado
+  const handleUserChange = async (userId) => {
+    setSelectedUser(userId);
+    const selectedUserData = users.find(user => user.user_id === userId);
+    if (selectedUserData && selectedUserData.role_id) {
+      setCurrentUserRole(selectedUserData.role_id); // Establecer el rol actual del usuario
+    } else {
+      setCurrentUserRole(""); // Si el usuario no tiene rol, limpiar el valor
+    }
+    setSelectedRole(""); // Limpiar la selección de rol al cambiar el usuario
   };
 
   const handleAssignRole = async () => {
@@ -91,7 +104,7 @@ const UserRoleAssignment = () => {
         <Select
           placeholder="Selecciona un usuario"
           value={selectedUser}
-          onChange={(value) => setSelectedUser(value)}
+          onChange={handleUserChange}
           style={{ width: "100%" }}
         >
           {Array.isArray(users) &&
@@ -107,7 +120,7 @@ const UserRoleAssignment = () => {
         <Title level={4}>Seleccionar Rol</Title>
         <Select
           placeholder="Selecciona un rol"
-          value={selectedRole}
+          value={selectedRole || currentUserRole} // Mostrar el rol actual si ya existe
           onChange={(value) => setSelectedRole(value)}
           style={{ width: "100%" }}
         >
