@@ -35,4 +35,6 @@ export const API_URL_TRANSPORT_ORDER = BASE_API_URL + 'warehouse_transfer/'
 export const API_URL_TRANSPORT_ORDER_DETAIL = BASE_API_URL + 'warehouse_transfer_detail/'
 export const API_URL_TRANSPORT_ORDER_CANCEL = BASE_API_URL + 'transfer_stock_cancellation/';
 
+export const API_URL_ROLES = BASE_API_URL + 'roles/';
+
 
