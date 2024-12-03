@@ -4,14 +4,12 @@ import Modal from "../../components/Modal"
 import Form from "../../components/Form"
 import FormItem from "antd/es/form/FormItem";
 import Table from "../../components/Table";
-import Button from "../../components/Button"
 import {Select} from "antd";
-import {fetchDataTesting} from "../../services/services"
-import { API_URL_STORE_LABELS, API_URL_PRODUCT_LABELS, API_URL_TRANSPORT_ORDER, API_URL_TRANSPORT_ORDER_DETAIL } from "../../services/ApisConfig";
-import { Flex, List, Typography, InputNumber, notification, Tag, Spin, QRCode} from "antd";
+import {fetchData,postData,fetchDataTesting} from "../../services/services"
+import { API_URL_STORE_LABELS, API_URL_PRODUCT_LABELS, API_URL_TRANSPORT_ORDER, API_URL_TRANSPORT_ORDER_DETAIL, API_URL_TRANSPORT_ORDER_CANCEL } from "../../services/ApisConfig";
+import { Flex, List, Typography, InputNumber, notification, Tag, Spin, Button, Input} from "antd";
 import { CloseOutlined } from '@ant-design/icons';
-import { DollarTwoTone, QrcodeOutlined } from '@ant-design/icons';
-import axios from "axios";
+import { DollarTwoTone, BarcodeOutlined, InfoCircleTwoTone} from '@ant-design/icons';
 const { Title,Text } = Typography;
 
 
@@ -31,6 +29,13 @@ const OrdersPage = () => {
     const [loading, setLoading] = useState(true);
     const [isQRModalVisible, setIsQRModalVisible] = useState(false);
     const [QRCodeText, setQRCodeText] = useState('');
+    const [isBarcode, setIsBarcode] = useState(false);
+    const [totalOrderPrice , setTotalOrderPrice] = useState(0);
+    const  [isCancelModalVisible, setIsCancelModalVisible] = useState(false);
+    const [cancelText, setCancelText] = useState("");
+    const [isModalCancellingVisible, setIsModalCancellingVisible] = useState(false);
+    const [orderID, setOrderID] = useState("")
+
 
     //get the names, image, and sku of the products to search for them
     //get the names and ID of the stores
@@ -44,13 +49,14 @@ const OrdersPage = () => {
     
         try {
             const [stores, products, orders] = await Promise.all([
-                fetchDataTesting(API_URL_STORE_LABELS),
-                fetchDataTesting(API_URL_PRODUCT_LABELS),
-                fetchDataTesting(API_URL_TRANSPORT_ORDER),
+                fetchData(API_URL_STORE_LABELS),
+                fetchData(API_URL_PRODUCT_LABELS),
+                fetchData(API_URL_TRANSPORT_ORDER),
             ]);
     
             setStoreLabels(stores);
-            setProductLabels(products);
+            const filteredProducts = products.filter(product => product.stock >= 10);
+            setProductLabels(filteredProducts);
     
             const formattedOrders = orders.map(order => ({
                 transfer_id: order.transfer_id,
@@ -58,21 +64,30 @@ const OrdersPage = () => {
                 transfer_date: formatDate(order.transfer_date),
                 status: order.status,
                 totalValue: order.totalValue,
+                reasons: order.reasons,
                 details: order.details.map(detail => ({
                     product: products.find(product => product.value === detail.product_id)?.label || "Unknown Product",
                     quantity: detail.quantity,
-                    price: detail.product.price
+                    price: (detail.product.price) * (detail.quantity)
                 })),
             }));
     
+            // Define the custom order for statuses
+            const statusOrder = ["Approving", "Preparing", "Delivering", "Delivered", "Cancelled", "Rejected"];
+    
+            // Sort the formattedOrders based on the custom order
+            formattedOrders.sort((a, b) => {
+                return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
+            });
+    
             setTransferOrders(formattedOrders);
-            console.log(orders)
         } catch (error) {
             notification.error({ message: 'Error fetching data' });
         } finally {
             setLoading(false);
         }
     };
+    
     
 
     function formatDate(dateString) { 
@@ -90,36 +105,98 @@ const OrdersPage = () => {
         form.resetFields();
         setListOfProducts([]);
         setTransformedListOfProducts([]);
+        setTotalOrderPrice(0);
     };
 
     const handleCancelDetails = () => {
         setIsDetailModalVisible(false);
     };
 
+    const handleCancelCacellation = () => {
+        setIsCancelModalVisible(false);
+    };
+
     const handleCancelQR = () => {
         setIsQRModalVisible(false);
     };
 
-    //selector
-    const onChange = (_, option) => {
-        setListOfProducts(prevList => [...prevList, option]);
-        setTransformedListOfProducts(prevList => [...prevList, option.label]);
-    };
+    const handleCancelCancellation = () => {
+        setIsModalCancellingVisible(false);
+    }
 
+    const handleOkCancel = async () => {
+
+        try {
+            const values = await form.validateFields(); 
+            const reason = values.reason; 
+            
+            if (!reason.trim()) {
+                notification.warning({ message: "Please provide a reason for cancellation." });
+                return;
+            }
+    
+            await postData(API_URL_TRANSPORT_ORDER_CANCEL, {
+                orderID: orderID,
+                reasons: reason,
+            });
+
+            notification.success({ message: 'Cancelled order successfully.' });
+
+        } catch (error) {
+            notification.error({ message: "An error occurred while cancelling the order." });
+            console.log(error)
+        } finally {
+            setIsModalCancellingVisible(false);
+            setOrderID("")
+            setTotalOrderPrice(0);
+            await fetchAllData();
+            form.resetFields();
+        }
+    };
+    
+
+    const updateTotalPrice = (products) => {
+        let total = products.reduce((sum, product) => {
+            const quantity = quantityMap[product.label] || 10; // Default quantity
+            return sum + (product.price * quantity);
+        }, 0);
+        
+        setTotalOrderPrice(total);
+    };
+    
+    
+    // Remove already selected products from the options
+    const filteredProductLabels = productLabels
+        .filter((product) => product.stock >= 10) // Only products with stock >= 10
+        .filter((product) => !listOfProducts.some((item) => item.label === product.label)); // Exclude selected products
+    
+    // Selector
+    const onChange = (_, option) => {
+        setListOfProducts((prevList) => {
+            const updatedList = [...prevList, option];
+            updateTotalPrice(updatedList); // Recalculate total
+            return updatedList;
+        });
+    
+        setTransformedListOfProducts((prevList) => [...prevList, option.label]);
+    };
+    
     const onSearch = (value) => {
         console.log('search:', value);
     };
-
+    
     const removeProductFromList = (itemToRemove) => {
-        //this is going to remove it from the label list, but i still need to remove it from the actual list with JSONs
-        setTransformedListOfProducts(prevList => prevList.filter(item => item !== itemToRemove));
-        setListOfProducts(prevList => {
-            const index = prevList.findIndex(item => item.label === itemToRemove);
-            if (index === -1) return prevList; // if label is not found, no changes are going to be done
-            return [...prevList.slice(0, index), ...prevList.slice(index + 1)];
-          });
-    }
-
+        setTransformedListOfProducts((prevList) =>
+            prevList.filter((item) => item !== itemToRemove)
+        );
+    
+        setListOfProducts((prevList) => {
+            const updatedList = prevList.filter((product) => product.label !== itemToRemove);
+            updateTotalPrice(updatedList); // Recalculate total
+            return updatedList;
+        });
+    };
+    
     const handleQuantityChange = (label, value) => {
         const product = productLabels.find(item => item.label === label);
     
@@ -128,11 +205,25 @@ const OrdersPage = () => {
             return;
         }
     
-        setQuantityMap(prevMap => ({
-            ...prevMap,
-            [label]: value
-        }));
+        setQuantityMap((prevMap) => {
+            const updatedMap = {
+                ...prevMap,
+                [label]: value,
+            };
+    
+            // Recalculate the total
+            const updatedTotalPrice = listOfProducts.reduce((total, product) => {
+                const qty = updatedMap[product.label] || 10;
+                return total + (product.price * qty);
+            }, 0);
+    
+            setTotalOrderPrice(updatedTotalPrice);
+    
+            return updatedMap;
+        });
     };
+    
+    
     
 
     const dateFormatter = () => {
@@ -145,15 +236,7 @@ const OrdersPage = () => {
 
     const submitOrder = async () => {
         try {
-            const values = await form.validateFields();
-    
-            // Check if there's an active order for the selected store
-            const activeOrder = transferOrders.find(
-                (order) => 
-                    order.store === storeLabes.find(store => store.value === values.store_receiver)?.label &&
-                    order.status !== "Delivered" // Adjust based on your 'completed' status
-            );
-    
+            const values = await form.validateFields();    
     
             if (transformedListOfProducts.length < 10) {
                 notification.error({ message: 'You must select at least 10 products to proceed.' });
@@ -177,27 +260,36 @@ const OrdersPage = () => {
             }
     
             setConfirmLoading(true);
-            const response = await axios.post(API_URL_TRANSPORT_ORDER, {
+
+            const response = await postData(API_URL_TRANSPORT_ORDER, {
                 store_id: values.store_receiver,
                 transfer_date: dateFormatter(),
-                status: "Pending",
+                status: "Approving", //then a preparing order
             });
     
-            const order_id = response.data.transfer_id;
+            const order_id = response.transfer_id;
+            console.log(order_id)
     
 
-            //improve this to make 1 post instead of individual posting
-    
-            for (const label of transformedListOfProducts) {
-                const product = listOfProducts.find((item) => item.label === label);
-                const quantityData = label_qty.find((item) => item.label === label);
-    
-                await axios.post(API_URL_TRANSPORT_ORDER_DETAIL, {
-                    transfer_id: order_id,
-                    product_id: product ? product.value : null,
-                    quantity: quantityData ? quantityData.quantity : null,
-                });
-            }
+            // Prepare the payload
+            const labelQty = transformedListOfProducts.map((label) => ({
+                product_id: productLabels.find(product => product.label === label).value,
+                quantity: label_qty.find((item) => item.label === label).quantity
+            }));
+
+            console.log({
+                transfer_id: order_id, 
+                products: labelQty,
+            });
+
+            //end all products in a single request
+            await postData(API_URL_TRANSPORT_ORDER_DETAIL, {
+                transfer_id: order_id, 
+                store_id: values.store_receiver,
+                products: labelQty,
+            });
+
+            //error: Cannot read properties of undefined (reading 'transfer_id')
     
             notification.success({ message: 'Order and details submitted successfully' });
             setConfirmLoading(false);
@@ -207,7 +299,6 @@ const OrdersPage = () => {
             notification.error({ message: error.message || 'Error submitting order' });
         }
     };
-    
     
 
     const columns = [
@@ -240,19 +331,60 @@ const OrdersPage = () => {
             align: 'center', 
             render: (text) => { 
                 let color; 
-                if (text === 'Pending') { 
-                    color = 'red'; 
+                if (text === 'Preparing') { 
+                    color = 'orange'; 
                 } else if (text === 'Delivering') {
-                     color = 'yellow'; 
-                    } else { color = 'green'; } return <Tag color={color}>{text}</Tag>; }},
-
+                    color = 'yellow'; 
+                } else if (text === 'Delivered'){ 
+                    color = 'green'; 
+                } else if (text === 'Approving'){ 
+                    color = 'blue'; 
+                } else {
+                    color = 'red'
+                }
+                return <Tag color={color}>{text}</Tag>; 
+            },
+            showSorterTooltip: {
+                target: 'full-header',
+              },
+              filters: [
+                {
+                    text: 'Approving',
+                    value: 'Approving',
+                  },
+                {
+                  text: 'Preparing',
+                  value: 'Preparing',
+                },
+                {
+                  text: 'Delivering',
+                  value: 'Delivering',
+                },
+                {
+                    text: 'Delivered',
+                    value: 'Delivered',
+                  },
+                  {
+                    text: 'Cancelled',
+                    value: 'Cancelled',
+                  },
+                  {
+                    text: 'Rejected',
+                    value: 'Rejected',
+                  },
+              ],
+              onFilter: (value, record) => record.status.indexOf(value) === 0,
+              
+        },
         {
             title: 'Worth',
             key: 'worth',
             dataIndex: 'totalValue',
-            width: 80,
+            width: 50,
             align: 'center',
-            render: (text) => { return <Text><DollarTwoTone twoToneColor="#32CD32"/> {text}</Text>}
+            render: (text) => { 
+                return <Text><DollarTwoTone twoToneColor="#32CD32"/> {text}</Text>
+            }
         },
         {
             title: 'Details',
@@ -260,17 +392,55 @@ const OrdersPage = () => {
             dataIndex: 'details',
             width: 80,
             align: 'center',
-            render: (text,render) => (<Button onClick={() => {setSelectedOrder(text); setIsDetailModalVisible(true); console.log(text)}}>Expand</Button>)
+            render: (text, render) => (
+                <Button onClick={() => {
+                    setSelectedOrder(text); 
+                    setIsDetailModalVisible(true); 
+                    console.log(text)
+                }}>
+                    Expand
+                </Button>
+            )
         },
         {
-            title: 'QR Code',
+            title: 'Codes',
             key: 'qr',
             width: 50,
             align: 'center',
-            render: (record) => (<Button onClick={() => {setQRCodeText(record.transfer_id); setIsQRModalVisible(true)}}><QrcodeOutlined /></Button> )
-        },
+            render: (record) => {
+                if (record.status !== "Cancelled" && record.status !== "Rejected" && record.status != "Approving" && record.status != "Delivered") {
+                    return (
+                        <>
+                            <Button onClick={() => {
+                                setQRCodeText(record.transfer_id); 
+                                setIsQRModalVisible(true);
+                                setIsBarcode(true);
+                            }}>
+                                <BarcodeOutlined />
+                            </Button>
+                        </>
+                    );
+                }
+                return null;
+            }
+        },        
+        { 
+            title: 'Cancelation', 
+            key: 'reasons', 
+            dataIndex: 'reasons', 
+            width: 50, 
+            align: 'center', 
+            render: (text, record) => { 
+                if (record.status === 'Preparing') { 
+                    return ( <Button color="danger" variant="outlined" onClick={() => {setIsModalCancellingVisible(true);setOrderID(record.transfer_id)}}> Cancel </Button> ); 
+                } else if (record.status === 'Cancelled'){
+                    return (<Button onClick={() => {setIsCancelModalVisible(true); setCancelText(text)}}><InfoCircleTwoTone twoToneColor="#FF0000"/></Button>)
+                }
+                return null; 
+            } 
+        }
     ];
-
+    
     const productColumns = [
         {
             title: 'Product',
@@ -292,9 +462,12 @@ const OrdersPage = () => {
             dataIndex: 'price',
             width: 50,
             align: 'center',
-            render: (text) => {return <Text><DollarTwoTone twoToneColor='#32CD32'/> {text}</Text>}
+            render: (text) => {
+                return <Text><DollarTwoTone twoToneColor='#32CD32'/> {text}</Text>
+            }
         }
     ];
+    
     
 
     return (
@@ -346,8 +519,11 @@ const OrdersPage = () => {
                                     optionFilterProp='label'
                                     onChange={onChange}
                                     onSearch={onSearch}
-                                    options={productLabels}/>
+                                    options={productLabels}
+                                    />
                             </FormItem>
+                            <Text type="danger">*You must select 10 different items to proceed with a transfer</Text>
+
                         </Form>
 
                         <Flex
@@ -357,7 +533,7 @@ const OrdersPage = () => {
                             >
 
                             <List
-                                header={<Title level={5}>Selected Products</Title>}
+                                header={<Text strong >Different Products: {listOfProducts.length} | TOTAL$: {totalOrderPrice}</Text>}
                                 bordered
                                 dataSource={transformedListOfProducts}
                                 style={{
@@ -421,10 +597,43 @@ const OrdersPage = () => {
             maxHeight = {400}
             >
              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}> 
-                <QRCode value={QRCodeText} /> {/* Dummy text, add an order scramble ID */} 
+             <img
+                            src={`https://barcode.tec-it.com/barcode.ashx?data=${QRCodeText}&code=Code128&translate-esc=false`}
+                            alt="Barcode"
+                        />
+              {/*  <QRCode value={QRCodeText} /> {/* Dummy text, add an order scramble ID */} 
+
             </div>
 
             </Modal>  
+            <Modal
+            visible={isCancelModalVisible}
+            title = 'Reasons for the Canecellation'
+            onCancel = {handleCancelCacellation}
+            footer = {null}
+            maxHeight = {400}
+            >
+             <Text>{cancelText}</Text>
+
+            </Modal>
+
+            <Modal 
+                title="Cancel Order" 
+                visible={isModalCancellingVisible} 
+                onOk={handleOkCancel} 
+                onCancel={handleCancelCancellation} 
+            > 
+
+                <Text>Please provide a reason for cancelling the order {orderID}:</Text> 
+                <Form form={form}> 
+                    <FormItem 
+                        name="reason"  
+                        rules={[{ required: true, message: 'Please provide a reason for cancellation' }]} 
+                        > 
+                        <Input placeholder="Enter the reason here..." /> 
+                    </FormItem> 
+                </Form> 
+            </Modal>
         </div>
         </Spin>
     )

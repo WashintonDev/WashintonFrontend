@@ -21,7 +21,7 @@ export const API_URL_UPDATE_WAREHOUSES_TRANSFERS = LOCAL_API_URL + "update_wareh
 export const API_URL_INVENTORIES = BASE_API_URL + 'inventory/';
 export const API_URL_PRODUCT_BATCH = BASE_API_URL + 'product_batch/';
 export const API_URL_BATCH = BASE_API_URL + 'batch/';
-export const API_URL_STORE_LABELS = BASE_API_URL_TESTING + 'stores/labels';
+export const API_URL_STORE_LABELS = BASE_API_URL + 'stores/labels';
 export const API_URL_BATCH_UPDATE_STATUS = API_URL_BATCH + 'update-status/';
 export const API_URL_BATCH_BULK_UPDATE_STATUS = BASE_API_URL + 'batches/'
 export const API_URL_CREATE_BATCH = BASE_API_URL + 'create_batch';
@@ -30,8 +30,9 @@ export const API_URL_STORE_TRANSFER = BASE_API_URL + 'store-transfers';
 export const API_URL_STORE_TRANSFER_DETAIL = BASE_API_URL + 'store-transfer-details';
 export const API_URL_CREATE_STORE_TRANSFER = BASE_API_URL + 'create-transfer';
 //product labels
-export const API_URL_PRODUCT_LABELS = BASE_API_URL_TESTING + 'products/labels';
-export const API_URL_TRANSPORT_ORDER = BASE_API_URL_TESTING + 'warehouse_transfer/'
-export const API_URL_TRANSPORT_ORDER_DETAIL = BASE_API_URL_TESTING + 'warehouse_transfer_detail/'
+export const API_URL_PRODUCT_LABELS = BASE_API_URL + 'products/labels';
+export const API_URL_TRANSPORT_ORDER = BASE_API_URL + 'warehouse_transfer/'
+export const API_URL_TRANSPORT_ORDER_DETAIL = BASE_API_URL + 'warehouse_transfer_detail/'
+export const API_URL_TRANSPORT_ORDER_CANCEL = BASE_API_URL + 'transfer_stock_cancellation/';
 
 
