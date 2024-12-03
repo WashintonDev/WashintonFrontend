@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchData, postData, putData } from '../../services/services';
 import { API_URL_SUPPLIERS } from '../../services/ApisConfig';
-import CustomTable from '../../components/Table';
-import { Button, Tooltip, Space, Modal, Form, Input, Select, message } from 'antd';
+import { Table, Button, Tooltip, Space, Modal, Form, Input, Select, message } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import Navbar from '../../components/Navbar';
 
@@ -21,6 +20,7 @@ const SuppliersTable = () => {
     const getSuppliers = async () => {
       try {
         const data = await fetchData(API_URL_SUPPLIERS);
+        console.log('Fetched suppliers:', data); // Add this line
         setSuppliers(data);
         setFilteredSuppliers(data); 
       } catch (error) {
@@ -162,12 +162,12 @@ const SuppliersTable = () => {
   return (
     <div>
       <Navbar title="Suppliers" buttonText="Add Supplier" onAddCategory={handleAdd} onSearch={handleSearch} />
-      <CustomTable columns={columns} dataSource={filteredSuppliers} loading={loading} pagination={pagination} />
+      <Table columns={columns} dataSource={filteredSuppliers} loading={loading} pagination={pagination} />
 
       {/* Modal for Adding Supplier */}
       <Modal
         title="Add Supplier"
-        visible={isModalVisible}
+        open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         onOk={() => form.submit()}
       >
@@ -201,7 +201,7 @@ const SuppliersTable = () => {
       {/* Modal for Editing Supplier */}
       <Modal
         title="Edit Supplier"
-        visible={isEditModalVisible}
+        open={isEditModalVisible}
         onCancel={() => setIsEditModalVisible(false)}
         onOk={() => form.submit()}
       >
