@@ -43,6 +43,12 @@ const ProtectedRoute = () => {
     }
     return <Outlet />;
   }
+  if (userRole === "guest") {
+    if (!location.pathname.includes("/=")) {
+      return <Navigate to="/" replace />;
+    }
+    return <Outlet />;
+  }
 
   return <Navigate to="/login" replace />;
 };

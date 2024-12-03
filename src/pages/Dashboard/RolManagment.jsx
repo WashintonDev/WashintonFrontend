@@ -253,120 +253,148 @@ const RoleManagement = () => {
             message: 'Rol eliminado exitosamente',
           });
         } catch (error) {
-            console.error("Error al obtener roles:", error);
+            console.error(error);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchRolesFromDB();
-    }, []);
+    const handleOpenModal = () => setOpenModal(true);
+    const handleCloseModal = () => setOpenModal(false);
 
-    const handleOpenModal = () => {
-        setOpenModal(true);
-    };
-
-    const handleCloseModal = () => {
-        setOpenModal(false);
-    };
-
-    const handleRoleChange = (event) => {
-        const { name, value, type, checked } = event.target;
-
+    const handleRoleChange = (e) => {
+        const { name, value, type, checked } = e.target;
         setCurrentRole((prevRole) => ({
             ...prevRole,
             permissions: {
                 ...prevRole.permissions,
                 [name]: type === 'checkbox' ? checked : value
             },
-            name: type !== 'checkbox' ? value : prevRole.name
+            name: name === 'name' ? value : prevRole.name
         }));
     };
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
-
+    const handleSubmit = async () => {
         const permissionsArray = Object.entries(currentRole.permissions)
-            .filter(([key, value]) => value) // Filtrar solo los permisos marcados como true
-            .map(([key]) => key); // Mapear a solo los nombres de los permisos
+            .filter(([key, value]) => value)
+            .map(([key]) => key);
 
         const roleToSend = {
             name: currentRole.name,
             permissions: permissionsArray
         };
 
-        console.log('Datos a enviar:', roleToSend); // Verifica la estructura
-
-        fetch(API_URL_ROLES, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(roleToSend),
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Rol creado con éxito:', data);
-            handleCloseModal(); // Cerrar el modal después de crear el rol
-            fetchRolesFromDB(); // Actualizar la lista de roles después de crear uno nuevo
-        })
-        .catch(error => {
-            console.error('Error al crear el rol:', error);
-        });
+        try {
+            const response = await fetch(API_URL_ROLES, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(roleToSend)
+            });
+            if (!response.ok) throw new Error('Error al crear el rol');
+            fetchRoles(); // Actualizar la lista de roles después de crear uno nuevo
+            message.success('Rol creado con éxito');
+            handleCloseModal();
+        } catch (error) {
+            message.error('Error al crear el rol');
+            console.error(error);
+        }
     };
+
+    const handleDeleteRole = async () => {
+        try {
+            const response = await fetch(`${API_URL_ROLES}${roleToDelete}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) throw new Error('Error al eliminar el rol');
+
+            fetchRoles(); // Actualizar la lista después de la eliminación
+            message.success('Rol eliminado con éxito');
+            setConfirmDeleteModalVisible(false); // Cerrar el modal de confirmación
+        } catch (error) {
+            message.error('Error al eliminar el rol');
+            console.error(error);
+        }
+    };
+
+    const showDeleteConfirm = (roleId) => {
+        setRoleToDelete(roleId);
+        setConfirmDeleteModalVisible(true);
+    };
+
+    const handleCancelDelete = () => {
+        setConfirmDeleteModalVisible(false);
+        setRoleToDelete(null);
+    };
+
+    useEffect(() => {
+        fetchRoles();
+    }, []);
 
     return (
         <div style={{ marginLeft: '250px' }}>
             <AdminSideB />
             <Navbar title="Gestión de Roles" />
+            <Button 
+                type="primary" 
+                onClick={handleOpenModal} 
+                style={{ marginBottom: '16px' }}
+            >
+                Crear Rol
+            </Button>
+
             {loading ? (
                 <Row justify="center" style={{ marginTop: '32px' }}>
-                    <CircularProgress />
+                    <Col>
+                        <Button type="primary" loading={loading}>
+                            Cargando roles...
+                        </Button>
+                    </Col>
                 </Row>
             ) : (
-                <TableContainer component={Paper}>
-                    <Table>
-                        <TableHead>
-                            {/* <Button variant="contained" color="primary" onClick={handleOpenModal}>Crear Rol</Button> */}
-                            <TableRow>
-                                <TableCell>Nombre</TableCell>
-                                <TableCell>Permisos</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {roles.map((role) => (
-                                <TableRow key={role.role_id}>
-                                    <TableCell>{role.name}</TableCell>
-                                    <TableCell>
-                                        <Row justify="start" wrap="true" gutter={[8, 8]}>
-                                            {JSON.parse(role.permissions).map((permission) => (
-                                                <Chip
-                                                    key={permission}
-                                                    label={permissionLabels[permission] || permission}
-                                                    size="small"
-                                                    color="primary"
-                                                    variant="outlined"
-                                                />
-                                            ))}
-                                        </Row>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                    <UserRoleAssignment />
-                </TableContainer>
+                <Table 
+                    dataSource={roles} 
+                    rowKey="role_id"
+                    columns={[
+                        { title: 'Nombre', dataIndex: 'name', key: 'name' },
+                        { 
+                            title: 'Permisos', 
+                            dataIndex: 'permissions', 
+                            key: 'permissions',
+                            render: (permissions) => (
+                                <Row gutter={[8, 8]}>
+                                    {JSON.parse(permissions).map((permission) => (
+                                        <Col key={permission}>
+                                            <Button type="link">{permissionLabels[permission] || permission}</Button>
+                                        </Col>
+                                    ))}
+                                </Row>
+                            )
+                        },
+                        { 
+                            title: 'Acciones', 
+                            key: 'actions',
+                            render: (_, record) => (
+                                <DeleteOutlined 
+                                    style={{ color: 'red', fontSize: '18px', cursor: 'pointer' }} 
+                                    onClick={() => showDeleteConfirm(record.role_id)} 
+                                />
+                            ) 
+                        }
+                    ]}
+                />
             )}
+
+            {/* Modal para crear o editar rol */}
             <Modal
                 title="Crear Rol"
                 visible={openModal}
                 onCancel={handleCloseModal}
-                footer={[
-                    <Button key="submit" type="primary" onClick={handleSubmit}>
-                        Crear Rol
-                    </Button>
-                ]}
+                onOk={handleSubmit}
+                okText="Crear Rol"
+                cancelText="Cancelar"
             >
               <Input prefix={<LockOutlined />} />
             </Form.Item>
