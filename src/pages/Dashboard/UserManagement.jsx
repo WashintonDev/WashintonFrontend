@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { SearchOutlined, UserAddOutlined } from '@ant-design/icons';
 import { BASE_API_URL } from '../../services/ApisConfig';
 import SideBarAdmin from '../../components/SideBarAdmin';
-
+import UserRoleAssignment from '../../components/RolSelector';
 const { Search } = Input;
 const { Header, Content, Sider } = Layout;
 
@@ -269,6 +269,7 @@ const UserManagement = () => {
             </Modal>
           </div>
         </Content>
+        <UserRoleAssignment />
       </Layout>
     </Layout>
   );
