@@ -1,237 +1,278 @@
-import { useState, useEffect } from 'react';
-import { Table, Modal, Form, Input, Select, notification, Button, Space, Tooltip, Tag } from 'antd';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import Navbar from '../../components/Navbar';
-import AdminSideB from '../../components/AdminSidebar';
-import { Box } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { message, Button, Spin, Table, Input, Modal, Tag, Space, Skeleton, Layout } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { API_URL_USERS, API_URL_STORES } from '../../services/apisConfig';
+import { SearchOutlined, UserAddOutlined } from '@ant-design/icons';
+import { BASE_API_URL } from '../../services/ApisConfig';
+import SideBarAdmin from '../../components/SideBarAdmin';
+import UserRoleAssignment from '../../components/RolSelector';
+const { Search } = Input;
+const { Header, Content, Sider } = Layout;
 
 const UserManagement = () => {
-    const [employees, setEmployees] = useState([]);
-    const navigate = useNavigate();
-    const [stores, setStores] = useState([]);
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const [editingEmployee, setEditingEmployee] = useState(null);
-    const [form] = Form.useForm();
-    const [searchText, setSearchText] = useState('');
-    const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
-    const [storeFilter, setStoreFilter] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [permissionsModalVisible, setPermissionsModalVisible] = useState(false);
+  const [userPermissions, setUserPermissions] = useState([]);
 
-    // Función para obtener empleados
-    const fetchEmployees = async () => {
-        try {
-            const response = await fetch(API_URL_USERS);
-            if (!response.ok) throw new Error('Error fetching employees');
-            const data = await response.json();
-            setEmployees(data);
-        } catch (error) {
-            notification.error({ message: error.message || 'Error al cargar empleados' });
-        }
-    };
+  const navigate = useNavigate();
 
-    const handleRedirect = () => {
-        navigate("/sign-up"); // Aquí '/signup' es la ruta de tu página de SignUp
-    };
+  useEffect(() => {
+    const role = localStorage.getItem("role");
+    if (role === "admin") {
+      setIsAdmin(true);
+    } else {
+      setLoading(false);
+      navigate('/');
+    }
+  }, [navigate]);
 
-    // Función para obtener tiendas
-    const fetchStores = async () => {
-        try {
-            const response = await fetch(API_URL_STORES);
-            if (!response.ok) {
-                const errorData = await response.text();
-                throw new Error(`Error fetching stores: ${response.status} - ${errorData}`);
-            }
-            const data = await response.json();
-            setStores(data);
-        } catch (error) {
-            notification.error({
-                message: 'Error al cargar tiendas',
-                description: error.message,
-            });
-        }
-    };
+  useEffect(() => {
+    if (isAdmin) {
+      loadUsers();
+      loadRoles();
+    }
+  }, [isAdmin]);
 
-    // Función para manejar el guardado
-    const handleOk = async () => {
-        try {
-            const values = await form.validateFields();
-            if (editingEmployee) {
-                await fetch(`${API_URL_USERS}${editingEmployee.id_usuario}/`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(values),
-                });
-                notification.success({ message: 'Empleado actualizado exitosamente' });
-            } else {
-                await fetch(API_URL_USERS, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(values),
-                });
-                notification.success({ message: 'Empleado creado exitosamente' });
-            }
-            setIsModalVisible(false);
-            fetchEmployees();
-        } catch (error) {
-            notification.error({ message: error.message || 'Error al guardar empleado' });
-        }
-    };
-
-    // Función para manejar la eliminación
-    const handleDelete = async (id) => {
-        try {
-            await fetch(`${API_URL_USERS}${id}/`, { method: 'DELETE' });
-            notification.success({ message: 'Empleado eliminado exitosamente' });
-            fetchEmployees();
-        } catch (error) {
-            notification.error({ message: error.message || 'Error al eliminar empleado' });
-        }
-    };
-
-    // Función para manejar la edición
-    const handleEdit = (employee) => {
-        setEditingEmployee(employee);
-        form.setFieldsValue({
-            first_name: employee.first_name,
-            last_name: employee.last_name,
-            email: employee.email,
-            phone: employee.phone,
-            role: employee.role,
-            store_id: employee.store_id,
-        });
-        setIsModalVisible(true);
-    };
-
-    useEffect(() => {
-        fetchEmployees();
-        fetchStores();
-    }, []);
-
-    const columns = [
-        {
-            title: 'No.',
-            key: 'index',
-            render: (_, __, index) => (pagination.current - 1) * pagination.pageSize + index + 1,
-            width: 60,
+  const loadUsers = async () => {
+    try {
+      const response = await fetch(`${BASE_API_URL}user`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
-            title: 'Nombre',
-            dataIndex: 'first_name',
-            key: 'first_name',
-            render: (_, record) => `${record.first_name} ${record.last_name}`,
-            ellipsis: true,
-        },
-        {
-            title: 'Email',
-            dataIndex: 'email',
-            key: 'email',
-            ellipsis: true,
-            render: (text) => <Tag color="blue">{text}</Tag>,
-        },
-        {
-            title: 'Teléfono',
-            dataIndex: 'phone',
-            key: 'phone',
-            ellipsis: true,
-            render: (text) => <Tag color="green">{text}</Tag>,
-        },
-        {
+      });
 
-            
-            title: 'Rol',
-            dataIndex: ['role', 'name'],
-            key: 'role',
-            filters: [
-                { text: 'Admin', value: 'admin' },
-                { text: 'Store', value: 'store' },
-            ],
-            onFilter: (value, record) => record.role === value,
-            render: (role) => <Tag color="purple">{role || 'N/A'}</Tag>,
-        },
-        {
-            title: 'Tienda',
-            dataIndex: 'store_id',
-            key: 'store_id',
-            filters: stores.map((store) => ({ text: store.name, value: store.store_id })),
-            onFilter: (value, record) => record.store_id === value,
-            render: (storeId) => {
-                const store = stores.find((s) => s.store_id === storeId);
-                return <Tag color="orange">{store?.name || 'N/A'}</Tag>;
-            },
-        },
-        {
-            title: 'Acciones',
-            key: 'actions',
-            render: (_, record) => (
-                <Space size="middle">
-                    <Tooltip title="Editar" placement="bottom">
-                        <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
-                    </Tooltip>
-                    <Tooltip title="Eliminar" placement="bottom">
-                        <Button
-                            danger
-                            type="link"
-                            icon={<DeleteOutlined />}
-                            onClick={() => handleDelete(record.id_usuario)}
-                        />
-                    </Tooltip>
-                </Space>
-            ),
-        },
-    ];
+      if (!response.ok) {
+        throw new Error('Error al cargar usuarios');
+      }
 
-    const handleAdd = () => {
-        setEditingEmployee(null);
-        form.resetFields();
-        setIsModalVisible(true);
-    };
+      const data = await response.json();
+      setUsers(data);
+      setLoading(false);
+    } catch (err) {
+      message.error('Error al cargar usuarios: ' + err.message);
+      setLoading(false);
+    }
+  };
 
+  const loadRoles = async () => {
+    try {
+      const response = await fetch(`${BASE_API_URL}roles`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al cargar roles');
+      }
+
+      const data = await response.json();
+      setRoles(data);
+    } catch (err) {
+      message.error('Error al cargar roles: ' + err.message);
+    }
+  };
+
+  const handleSearch = (value) => {
+    setSearchText(value);
+  };
+
+  const handleGoToSignup = () => {
+    Modal.confirm({
+      title: '¿Crear nuevo usuario?',
+      content: 'Serás redirigido a la página de registro.',
+      onOk() {
+        navigate('/sign-up');
+      },
+    });
+  };
+
+  const showUserDetails = (user) => {
+    setSelectedUser(user);
+    setModalVisible(true);
+  };
+
+  const handleModalClose = () => {
+    setModalVisible(false);
+    setSelectedUser(null);
+  };
+
+  const showUserPermissions = async (user) => {
+    try {
+      const userRole = roles.find((role) => role.role_id === user.role_id);
+
+      if (userRole) {
+        setUserPermissions(JSON.parse(userRole.permissions));
+        setPermissionsModalVisible(true);
+      } else {
+        message.error('Rol de usuario no encontrado');
+      }
+    } catch (err) {
+      message.error('Error al cargar permisos: ' + err.message);
+    }
+  };
+
+  const handlePermissionsModalClose = () => {
+    setPermissionsModalVisible(false);
+    setUserPermissions([]);
+  };
+
+  const columns = [
+    {
+      title: 'Nombre',
+      dataIndex: 'first_name',
+      key: 'first_name',
+      sorter: (a, b) => a.first_name.localeCompare(b.first_name),
+      filteredValue: [searchText],
+      onFilter: (value, record) =>
+        (record.first_name && record.first_name.toLowerCase().includes(value.toLowerCase())) ||
+        (record.email && record.email.toLowerCase().includes(value.toLowerCase())),
+    },
+    {
+      title: 'Apellido',
+      dataIndex: 'last_name',
+      key: 'last_name',
+    },
+    {
+      title: 'Email',
+      dataIndex: 'email',
+      key: 'email',
+    },
+    {
+      title: 'Rol',
+      dataIndex: 'role_id',
+      key: 'role_id',
+      render: (role_id) => {
+        const role = roles.find((r) => r.role_id === role_id);
+        return <Tag color={role_id === 1 ? 'red' : 'green'}>{role ? role.name.toUpperCase() : 'USER'}</Tag>;
+      },
+      filters: roles.map((role) => ({ text: role.name, value: role.role_id })),
+      onFilter: (value, record) => record.role_id === value,
+    },
+    {
+      title: 'Estado',
+      dataIndex: 'firebase_user_ID',
+      key: 'firebase_user_ID',
+      render: (firebase_user_ID) => (
+        <Tag color={firebase_user_ID ? 'green' : 'volcano'}>
+          {firebase_user_ID ? 'Activo' : 'Inactivo'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Acciones',
+      key: 'actions',
+      render: (_, record) => (
+        <Space size="middle">
+          <Button type="link" onClick={() => showUserDetails(record)}>
+            Ver detalles
+          </Button>
+          <Button type="link" onClick={() => showUserPermissions(record)}>
+            Ver permisos
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
+  if (loading) {
     return (
-        <Box sx={{ marginLeft: '250px' }}>
-            <AdminSideB />
-            <div>
-                <Navbar
-                    title="Manejo de Usuarios"
-                    buttonText="Agregar Usuario"
-                    onAddCategory={handleRedirect}
-                    onSearch={(value) => setSearchText(value)}
-                    
-                />
-                <div style={{ maxWidth: '90%', margin: '0 auto 16px auto' }}>
-                    <Select
-                        placeholder="Filtrar por tienda"
-                        allowClear
-                        style={{ width: 300 }}
-                        onChange={(value) => setStoreFilter(value)}
-                    >
-                        {stores.map((store) => (
-                            <Select.Option key={store.store_id} value={store.store_id}>
-                                {`${store.name} - ${store.city}`}
-                            </Select.Option>
-                        ))}
-                    </Select>
-                </div>
-                <Table
-                    dataSource={employees.filter(
-                        (emp) =>
-                            (!searchText ||
-                                emp.first_name?.toLowerCase().includes(searchText.toLowerCase()) ||
-                                emp.last_name?.toLowerCase().includes(searchText.toLowerCase()) ||
-                                emp.email?.toLowerCase().includes(searchText.toLowerCase())) &&
-                            (!storeFilter || emp.store_id === storeFilter)
-                    )}
-                    columns={columns}
-                    rowKey="id_usuario"
-                    pagination={pagination}
-                    onChange={(pagination) => setPagination(pagination)}
-                    style={{ maxWidth: '90%', margin: '0 auto' }}
-                    bordered
-                />
-               
-            </div>
-        </Box>
+      <div className="container mx-auto p-4">
+        <Skeleton active />
+        <Skeleton active />
+        <Skeleton active />
+      </div>
     );
+  }
+
+  if (!isAdmin) {
+    return null;
+  }
+
+  return (
+    <Layout style={{ minHeight: '100vh' }}>
+        <SideBarAdmin />
+      <Layout>
+        <Header style={{ background: '#fff', padding: 0 }}>
+          <h2 className="text-2xl font-bold">Gestión de Usuarios</h2>
+        </Header>
+        <Content style={{ margin: '16px' }}>
+          <div className="container mx-auto p-4">
+            <div className="flex justify-between items-center mb-4">
+              <Button
+                type="primary"
+                icon={<UserAddOutlined />}
+                onClick={handleGoToSignup}
+              >
+                Crear Nuevo Usuarioo
+              </Button>
+            </div>
+            <div className="mb-4">
+              <Search
+                placeholder="Buscar por nombre o email"
+                allowClear
+                enterButton={<SearchOutlined />}
+                size="large"
+                onSearch={handleSearch}
+              />
+            </div>
+            <Table
+              columns={columns}
+              dataSource={users}
+              rowKey="user_id"
+              pagination={{ pageSize: 10 }}
+              loading={loading}
+            />
+            <Modal
+              title="Detalles del Usuario"
+              visible={modalVisible}
+              onCancel={handleModalClose}
+              footer={[
+                <Button key="back" onClick={handleModalClose}>
+                  Cerrar
+                </Button>,
+              ]}
+            >
+              {selectedUser && (
+                <div>
+                  <p><strong>Nombre:</strong> {selectedUser.first_name}</p>
+                  <p><strong>Apellido:</strong> {selectedUser.last_name}</p>
+                  <p><strong>Email:</strong> {selectedUser.email}</p>
+                  <p><strong>Rol:</strong> {roles.find((r) => r.role_id === selectedUser.role_id)?.name.toUpperCase() || 'USER'}</p>
+                  <p><strong>Estado:</strong> {selectedUser.firebase_user_ID ? 'Activo' : 'Inactivo'}</p>
+                </div>
+              )}
+            </Modal>
+            <Modal
+              title="Permisos del Usuario"
+              visible={permissionsModalVisible}
+              onCancel={handlePermissionsModalClose}
+              footer={[
+                <Button key="back" onClick={handlePermissionsModalClose}>
+                  Cerrar
+                </Button>,
+              ]}
+            >
+              <ul>
+                {userPermissions.map((permission, index) => (
+                  <li key={index}>{permission}</li>
+                ))}
+              </ul>
+            </Modal>
+          </div>
+        </Content>
+        <UserRoleAssignment />
+      </Layout>
+    </Layout>
+  );
 };
 
 export default UserManagement;

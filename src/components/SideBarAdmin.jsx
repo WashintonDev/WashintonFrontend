@@ -4,7 +4,8 @@ import {
   UserOutlined,
   TeamOutlined,
   ShopOutlined,
-  DollarOutlined,
+  UserSwitchOutlined,
+  InsuranceOutlined,
 } from '@ant-design/icons';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -27,8 +28,11 @@ const SideBarAdmin = () => {
         <Menu.Item key="/admin/profile" icon={<ShopOutlined />}>
           <Link to="/admin/profile">Profile</Link>
         </Menu.Item>
-        <Menu.Item key="/admin/inventory" icon={<DollarOutlined />}>
-          <Link to="/admin/inventory">Inventory</Link>
+        <Menu.Item key="/admin/users" icon={<UserSwitchOutlined />}>
+          <Link to="/admin/users">User Managment</Link>
+        </Menu.Item>
+        <Menu.Item key="/admin/predictions" icon={<InsuranceOutlined />}>
+          <Link to="/admin/predictions">Predictions</Link>
         </Menu.Item>
       </Menu>
     </Sider>

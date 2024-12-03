@@ -1,50 +1,257 @@
-import { useState, useEffect } from 'react';
-import { Typography, Button, Modal, Row, Col, Input, Checkbox } from 'antd'; // Solo lo necesario de Ant Design
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, CircularProgress, Paper, Box } from '@mui/material';
-import AdminSideB from '../../components/AdminSidebar';
-import Navbar from '../../components/Navbar'; // Asegúrate de importar la navbar
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Layout,
+  Button,
+  Table,
+  Modal,
+  Form,
+  Input,
+  Checkbox,
+  Typography,
+  Space,
+  Tooltip,
+  Spin,
+  notification,
+  Switch,
+  Select,
+  Card,
+  Row,
+  Col,
+  List,
+  Avatar,
+  Tag,
+} from 'antd';
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  HistoryOutlined,
+  UserOutlined,
+  LockOutlined,
+  TeamOutlined,
+  BarChartOutlined,
+  ShoppingCartOutlined,
+  FileTextOutlined,
+  BulbOutlined,
+  SearchOutlined,
+} from '@ant-design/icons';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Pie } from '@ant-design/plots';
+import SideBarAdmin from '../../components/SideBarAdmin';
 import { API_URL_ROLES } from '../../services/ApisConfig';
-import UserRoleAssignment from '../../components/rolselector';
+
+const { Content } = Layout;
+const { Title, Text } = Typography;
+const { Option } = Select;
 
 const RoleManagement = () => {
-    const [roles, setRoles] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [openModal, setOpenModal] = useState(false); // Estado para manejar la apertura del modal
-    const [currentRole, setCurrentRole] = useState({
+  const [roles, setRoles] = useState([]);
+  const [historyDialog, setHistoryDialog] = useState(false);
+  const [roleHistory, setRoleHistory] = useState([]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [currentRole, setCurrentRole] = useState({
+    name: '',
+    description: '',
+    permissions: [],
+  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [form] = Form.useForm();
+
+  useEffect(() => {
+    fetchRoles();
+  }, []);
+
+  const fetchRoles = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(API_URL_ROLES, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al cargar los roles');
+      }
+
+      const data = await response.json();
+      const formattedRoles = data.map(role => ({
+        id: role.role_id,
+        name: role.name,
+        description: role.description || '',
+        permissions: JSON.parse(role.permissions),
+      }));
+
+      setRoles(formattedRoles);
+    } catch (error) {
+      notification.error({
+        message: 'Error al cargar los roles',
+        description: 'Por favor, intente nuevamente más tarde.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRoleHistory = async () => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const mockHistory = [
+        {
+          id: 1,
+          action: 'create',
+          roleName: 'Administrador',
+          user: 'Juan Pérez',
+          timestamp: new Date('2024-01-20T10:30:00'),
+          description: 'Creación del rol Administrador',
+        },
+        {
+          id: 2,
+          action: 'update',
+          roleName: 'Vendedor',
+          user: 'María García',
+          timestamp: new Date('2024-01-21T15:45:00'),
+          description: 'Actualización de permisos',
+          changes: {
+            'Gestión de Ventas': { from: 'No', to: 'Sí' },
+            'Gestión de Inventario': { from: 'No', to: 'Sí' },
+          },
+        },
+        {
+          id: 3,
+          action: 'delete',
+          roleName: 'Invitado',
+          user: 'Carlos Rodríguez',
+          timestamp: new Date('2024-01-22T09:15:00'),
+          description: 'Eliminación del rol Invitado',
+        },
+      ];
+      setRoleHistory(mockHistory);
+    } catch (error) {
+      notification.error({
+        message: 'Error al cargar el historial',
+        description: 'Por favor, intente nuevamente más tarde.',
+      });
+    }
+  };
+
+  const handleOpenDialog = (role = null) => {
+    if (role) {
+      setCurrentRole({
+        ...role,
+        permissions: role.permissions,
+      });
+      setIsEditing(true);
+      form.setFieldsValue({
+        ...role,
+        permissions: role.permissions,
+      });
+    } else {
+      setCurrentRole({
         name: '',
-        permissions: {
-            registerProducts: false,
-            warehouse_employee: false,
-            transferOrders: false,
-            manageSuppliers: false,
-            sales: false,
-            dispatch: false
-        }
+        description: '',
+        permissions: [],
+      });
+      setIsEditing(false);
+      form.resetFields();
+    }
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setCurrentRole({
+      name: '',
+      description: '',
+      permissions: [],
     });
+    setIsEditing(false);
+    form.resetFields();
+  };
 
-    const permissionLabels = {
-        registerProducts: 'Registro de productos',
-        warehouse_employee: ' Almacén',
-        transferOrders: 'Confirmación de traslado',
-        manageSuppliers: 'Gestión de proveedores',
-        sales: 'Modulo de ventas',
-        dispatch: 'Modulo de Dispatch'
-    };
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      setLoading(true);
 
-    const fetchRoles = async (apiUrl) => {
-        const response = await fetch(apiUrl);
+      const permissions = JSON.stringify(values.permissions);
+
+      if (isEditing) {
+        const response = await fetch(`${API_URL_ROLES}${currentRole.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ...values, permissions }),
+        });
+
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+          throw new Error('Error al actualizar el rol');
         }
-        return response.json();
-    };
 
-    const fetchRolesFromDB = async () => {
+        setRoles(roles.map(role => (role.id === currentRole.id ? { ...role, ...values, permissions: JSON.parse(permissions) } : role)));
+        notification.success({
+          message: 'Rol actualizado exitosamente',
+        });
+      } else {
+        const response = await fetch(API_URL_ROLES, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ...values, permissions }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al crear el rol');
+        }
+
+        const newRole = await response.json();
+        setRoles([...roles, { ...newRole, permissions: JSON.parse(newRole.permissions) }]);
+        notification.success({
+          message: 'Rol creado exitosamente',
+        });
+      }
+      handleCloseDialog();
+    } catch (error) {
+      notification.error({
+        message: 'Error al procesar la operación',
+        description: 'Por favor, verifique los datos e intente nuevamente.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    Modal.confirm({
+      title: '¿Estás seguro de que deseas eliminar este rol?',
+      content: 'Esta acción no se puede deshacer.',
+      okText: 'Sí, eliminar',
+      okType: 'danger',
+      cancelText: 'Cancelar',
+      onOk: async () => {
         setLoading(true);
         try {
-            const rolesData = await fetchRoles(API_URL_ROLES); // Llama a la API para obtener los roles
-            setRoles(rolesData); // Ya vienen los roles con los permisos como un objeto JSON
-            console.log("Roles obtenidos:", rolesData);
+          const response = await fetch(`${API_URL_ROLES}${id}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Error al eliminar el rol');
+          }
+
+          setRoles(roles.filter(role => role.id !== id));
+          notification.success({
+            message: 'Rol eliminado exitosamente',
+          });
         } catch (error) {
             console.error("Error al obtener roles:", error);
         } finally {
@@ -161,31 +368,111 @@ const RoleManagement = () => {
                     </Button>
                 ]}
             >
-                <form onSubmit={handleSubmit}>
-                    <Input
-                        placeholder="Nombre del Rol"
-                        value={currentRole.name}
-                        onChange={handleRoleChange}
-                        name="name"
-                        style={{ marginBottom: '16px' }}
+              <Input prefix={<LockOutlined />} />
+            </Form.Item>
+            <Form.Item
+              name="description"
+              label="Descripción"
+              rules={[{ required: true, message: 'Por favor ingrese la descripción del rol' }]}
+            >
+              <Input.TextArea />
+            </Form.Item>
+            <Form.Item label="Permisos" name="permissions">
+              <Checkbox.Group style={{ width: '100%' }}>
+                <Row>
+                  <Col span={12}>
+                    <Checkbox value="create_users">Crear Usuarios</Checkbox>
+                  </Col>
+                  <Col span={12}>
+                    <Checkbox value="delete_users">Eliminar Usuarios</Checkbox>
+                  </Col>
+                  <Col span={12}>
+                    <Checkbox value="edit_users">Editar Usuarios</Checkbox>
+                  </Col>
+                  <Col span={12}>
+                    <Checkbox value="transferOrders">Transferir Pedidos</Checkbox>
+                  </Col>
+                  <Col span={12}>
+                    <Checkbox value="dispatch">Despachar</Checkbox>
+                  </Col>
+                  <Col span={12}>
+                    <Checkbox value="sales">Ventas</Checkbox>
+                  </Col>
+                  <Col span={12}>
+                    <Checkbox value="registerSales">Registrar Ventas</Checkbox>
+                  </Col>
+                  <Col span={12}>
+                    <Checkbox value="viewReports">Ver Reportes</Checkbox>
+                  </Col>
+                  <Col span={12}>
+                    <Checkbox value="suppliers">Proveedores</Checkbox>
+                  </Col>
+                </Row>
+              </Checkbox.Group>
+            </Form.Item>
+          </Form>
+        </Modal>
+
+        <Modal
+          title="Historial de Cambios de Roles"
+          visible={historyDialog}
+          onCancel={() => setHistoryDialog(false)}
+          footer={null}
+          width={800}
+        >
+          <List
+            itemLayout="horizontal"
+            dataSource={roleHistory}
+            renderItem={(item) => (
+              <List.Item>
+                <List.Item.Meta
+                  avatar={
+                    <Avatar
+                      icon={
+                        item.action === 'create' ? <PlusOutlined /> :
+                        item.action === 'update' ? <EditOutlined /> :
+                        <DeleteOutlined />
+                      }
+                      style={{
+                        backgroundColor:
+                          item.action === 'create' ? '#52c41a' :
+                          item.action === 'update' ? '#1890ff' :
+                          '#f5222d'
+                      }}
                     />
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        {Object.keys(permissionLabels).map((permission) => (
-                            <Checkbox
-                                key={permission}
-                                checked={currentRole.permissions[permission]}
-                                onChange={handleRoleChange}
-                                name={permission}
-                                style={{ marginBottom: '8px' }}
-                            >
-                                {permissionLabels[permission]}
-                            </Checkbox>
-                        ))}
-                    </div>
-                </form>
-            </Modal>
-        </div>
-    );
+                  }
+                  title={
+                    <Space>
+                      <Text strong>{item.action === 'create' ? 'Creación' : item.action === 'update' ? 'Actualización' : 'Eliminación'}</Text>
+                      <Text type="secondary">{item.roleName}</Text>
+                    </Space>
+                  }
+                  description={
+                    <>
+                      <Text>{item.description}</Text>
+                      <br />
+                      <Text type="secondary">
+                        {`Por ${item.user} el ${item.timestamp.toLocaleString()}`}
+                      </Text>
+                    </>
+                  }
+                />
+                {item.changes && (
+                  <Space direction="vertical">
+                    {Object.entries(item.changes).map(([key, value]) => (
+                      <Text key={key}>
+                        {`${key}: ${value.from} → ${value.to}`}
+                      </Text>
+                    ))}
+                  </Space>
+                )}
+              </List.Item>
+            )}
+          />
+        </Modal>
+      </Content>
+    </Layout>
+  );
 };
 
 export default RoleManagement;

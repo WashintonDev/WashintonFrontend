@@ -5,8 +5,7 @@ import RoleHistoryDialog from "./RolHistory";
 import RoleManagement from "./RolManagment";
 import UserManagement from "./UserManagement";
 import Profile from "./Profile";
-
-
+import Predictions from "./Predictions";
 const Admin = () => {
     return (
       <div>
@@ -16,6 +15,7 @@ const Admin = () => {
           <Route path="/roles" element={<RoleHistoryDialog />} />
           <Route path="/users" element={<UserManagement />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="*" element={<Predictions />} />
         </Routes>
 
       </div>
