@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button, Modal, Input, Checkbox, Row, Col, Table, message } from 'antd';
-import { DeleteOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import AdminSideB from '../../components/AdminSidebar';
 import Navbar from '../../components/Navbar'; 
 import { API_URL_ROLES } from '../../services/ApisConfig';
@@ -10,6 +10,7 @@ const RoleManagement = () => {
     const [roles, setRoles] = useState([]);
     const [loading, setLoading] = useState(false);
     const [openModal, setOpenModal] = useState(false);
+    const [isEditing, setIsEditing] = useState(false); // Nuevo estado para distinguir entre crear y editar
     const [currentRole, setCurrentRole] = useState({
         name: '',
         permissions: {
@@ -47,88 +48,99 @@ const RoleManagement = () => {
             setLoading(false);
         }
     };
-    const fetchRoles = async () => {
-        setLoading(true);
-        try {
-            const response = await fetch(API_URL_ROLES);
-            if (!response.ok) throw new Error('Error al obtener roles');
-            const rolesData = await response.json();
-            setRoles(rolesData);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
+
+    const handleOpenModal = () => {
+        setIsEditing(false);
+        setCurrentRole({
+            name: '',
+            permissions: {
+                registerProducts: false,
+                warehouse_employee: false,
+                transferOrders: false,
+                manageSuppliers: false,
+                sales: false,
+                dispatch: false
+            }
+        });
+        setOpenModal(true);
     };
 
-    const handleOpenModal = () => setOpenModal(true);
     const handleCloseModal = () => setOpenModal(false);
 
     const handleRoleChange = (e) => {
-      const { name, value, type, checked } = e.target;
-  
+        const { name, value, type, checked } = e.target;
 
-      setCurrentRole((prevRole) => ({
-          ...prevRole,
-          permissions: {
-              ...prevRole.permissions,
-              [name]: type === 'checkbox' ? checked : value  
-          },
-   
-          name: name === 'name' ? value : prevRole.name
-      }));
-  };
-  
-
-  const handleSubmit = async () => {
-  
-    const permissionsArray = Object.entries(currentRole.permissions)
-        .filter(([key, value]) => value && key !== 'name')  
-        .map(([key]) => key);
-
-    const roleToSend = {
-        name: currentRole.name,
-        permissions: permissionsArray  
+        setCurrentRole((prevRole) => ({
+            ...prevRole,
+            permissions: {
+                ...prevRole.permissions,
+                [name]: type === 'checkbox' ? checked : value
+            },
+            name: name === 'name' ? value : prevRole.name
+        }));
     };
 
-    console.log('Role to send:', roleToSend);  
+    const handleSubmit = async () => {
+        const permissionsArray = Object.entries(currentRole.permissions)
+            .filter(([key, value]) => value && key !== 'name')
+            .map(([key]) => key);
 
-    try {
-        const response = await fetch(API_URL_ROLES, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(roleToSend)
+        const roleToSend = {
+            name: currentRole.name,
+            permissions: permissionsArray
+        };
+
+        try {
+            const response = isEditing
+                ? await fetch(`${API_URL_ROLES}${currentRole.role_id}`, {
+                      method: 'PUT', // Para editar rol existente
+                      headers: {
+                          'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify(roleToSend)
+                  })
+                : await fetch(API_URL_ROLES, {
+                      method: 'POST', // Para crear nuevo rol
+                      headers: {
+                          'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify(roleToSend)
+                  });
+
+            if (!response.ok) throw new Error('Error al guardar el rol');
+            fetchRoles();
+            message.success(`Rol ${isEditing ? 'actualizado' : 'creado'} con éxito`);
+            handleCloseModal();
+        } catch (error) {
+            message.error('Error al guardar el rol');
+            console.error(error);
+        }
+    };
+
+    const handleEditRole = (role) => {
+        setIsEditing(true);
+        setCurrentRole({
+            role_id: role.role_id,
+            name: role.name,
+            permissions: JSON.parse(role.permissions).reduce(
+                (acc, perm) => ({ ...acc, [perm]: true }),
+                {}
+            )
         });
-        if (!response.ok) throw new Error('Error al crear el rol');
-        fetchRoles();  
-        message.success('Rol creado con éxito');
-        handleCloseModal();
-    } catch (error) {
-        message.error('Error al crear el rol');
-        console.error(error);
-    }
-};
-
-  
+        setOpenModal(true);
+    };
 
     const handleDeleteRole = async () => {
         try {
             const response = await fetch(`${API_URL_ROLES}${roleToDelete}`, {
-                method: 'DELETE',
+                method: 'DELETE'
             });
 
             if (!response.ok) throw new Error('Error al eliminar el rol');
 
-            fetchRoles(); // Actualizar la lista después de la eliminación
+            fetchRoles();
             message.success('Rol eliminado con éxito');
-            setConfirmDeleteModalVisible(false); // Cerrar el modal de confirmación
-            if (!response.ok) throw new Error('Error al eliminar el rol');
-
-            fetchRoles(); // Actualizar la lista después de la eliminación
-            message.success('Rol eliminado con éxito');
-            setConfirmDeleteModalVisible(false); // Cerrar el modal de confirmación
+            setConfirmDeleteModalVisible(false);
         } catch (error) {
             message.error('Error al eliminar el rol');
             console.error(error);
@@ -193,23 +205,28 @@ const RoleManagement = () => {
                             title: 'Acciones', 
                             key: 'actions',
                             render: (_, record) => (
-                                <DeleteOutlined 
-                                    style={{ color: 'red', fontSize: '18px', cursor: 'pointer' }} 
-                                    onClick={() => showDeleteConfirm(record.role_id)} 
-                                />
+                                <>
+                                    <EditOutlined
+                                        style={{ color: 'blue', fontSize: '18px', cursor: 'pointer', marginRight: '8px' }}
+                                        onClick={() => handleEditRole(record)}
+                                    />
+                                    <DeleteOutlined 
+                                        style={{ color: 'red', fontSize: '18px', cursor: 'pointer' }} 
+                                        onClick={() => showDeleteConfirm(record.role_id)} 
+                                    />
+                                </>
                             ) 
                         }
                     ]}
                 />
             )}
 
-            {/* Modal para crear o editar rol */}
             <Modal
-                title="Crear Rol"
+                title={isEditing ? 'Editar Rol' : 'Crear Rol'}
                 visible={openModal}
                 onCancel={handleCloseModal}
                 onOk={handleSubmit}
-                okText="Crear Rol"
+                okText={isEditing ? 'Actualizar Rol' : 'Crear Rol'}
                 cancelText="Cancelar"
             >
                 <div style={{ marginBottom: '16px' }}>
@@ -238,7 +255,6 @@ const RoleManagement = () => {
                 </div>
             </Modal>
 
-            {/* Modal para confirmar la eliminación */}
             <Modal
                 title="Confirmar Eliminación"
                 visible={confirmDeleteModalVisible}
