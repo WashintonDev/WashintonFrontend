@@ -27,6 +27,9 @@ const NavBarMenu = ({ title, onAddCategory, onSearch, showSearch = true, showAdd
             <Menu.Item>
                 <Link to="/inventory/store">Stores</Link>
             </Menu.Item>
+            <Menu.Item>
+                <Link to="/suppliers">Suppliers</Link>
+            </Menu.Item>
             <Menu.Item disabled style={{ cursor: "not-allowed", color: "#bdbdbd" }}>Products</Menu.Item>
             <Menu.Item>
                 <Link to="/inventory/product">Products</Link>
