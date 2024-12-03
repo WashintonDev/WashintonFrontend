@@ -1,6 +1,6 @@
 .calendar-container {
   width: 100%;
-  height: 500px; /* Ajusta la altura según tus necesidades */
+  height: 500px; /* Adjust the height as needed */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -16,9 +16,25 @@
 }
 
 .react-calendar__tile {
-  height: 65px; /* Ajusta la altura de las celdas según tus necesidades */
+  height: 65px; /* Adjust the height of the cells as needed */
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
+  flex-direction: column;
+}
+
+.tile-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.day {
+  font-weight: bold;
+}
+
+.sales {
+  font-size: 12px;
+  color: #888;
 }
