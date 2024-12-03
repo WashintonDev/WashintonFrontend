@@ -269,7 +269,6 @@ const UserManagement = () => {
             </Modal>
           </div>
         </Content>
-        <UserRoleAssignment />
       </Layout>
     </Layout>
   );

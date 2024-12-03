@@ -37,7 +37,7 @@ const ProtectedRoute = () => {
     }
     return <Outlet />;
   }
-  if (userRole === "warehouse_employee") {
+  if (userRole === "warehouse_employee" && userRole === "warehouse_asociate") {
     if (!location.pathname.includes("/inventory")) {
       return <Navigate to="/inventory" replace />;
     }
