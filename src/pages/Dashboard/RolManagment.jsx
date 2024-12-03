@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Button, Modal, Input, Checkbox, Row, Col, Table, message, Space, Typography, Card, Layout } from 'antd';
-import { DeleteOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons';
-import SideBarAdmin from '../../components/SideBarAdmin';
+import { Button, Modal, Input, Checkbox, Row, Col, Table, message,Layout } from 'antd';
+import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import Navbar from '../../components/Navbar';
 import { API_URL_ROLES } from '../../services/ApisConfig';
 import UserRoleAssignment from '../../components/RolSelector';
-
-const { Title } = Typography;
-const { Content } = Layout;
+import SideBarAdmin from '../../components/SideBarAdmin';
+import { Collapse } from 'antd';
+const { Header, Content, Sider } = Layout;
+const { Panel } = Collapse;
 
 const RoleManagement = () => {
     const [roles, setRoles] = useState([]);
@@ -29,19 +30,19 @@ const RoleManagement = () => {
     const [roleToDelete, setRoleToDelete] = useState(null);
 
     const permissionLabels = {
-        registerProducts: 'Registro de productos',
-        warehouse_employee: 'Almacén',
-        transferOrders: 'Confirmación de traslado',
-        manageSuppliers: 'Gestión de proveedores',
-        sales: 'Modulo de ventas',
-        dispatch: 'Modulo de Dispatch'
+        registerProducts: 'Register Products',
+        warehouse_employee: 'Warehouse',
+        transferOrders: 'Transfer Orders',
+        manageSuppliers: 'Manage Suppliers',
+        sales: 'Sales Module',
+        dispatch: 'Dispatch Module'
     };
 
     const fetchRoles = async () => {
         setLoading(true);
         try {
             const response = await fetch(API_URL_ROLES);
-            if (!response.ok) throw new Error('Error al obtener roles');
+            if (!response.ok) throw new Error('Error fetching roles');
             const rolesData = await response.json();
             setRoles(rolesData);
         } catch (error) {
@@ -51,32 +52,8 @@ const RoleManagement = () => {
         }
     };
 
-    const handleOpenModal = (role = null) => {
-        if (role) {
-            setCurrentRole({
-                name: role.name,
-                permissions: JSON.parse(role.permissions)
-            });
-            setIsEditing(true);
-        } else {
-            setCurrentRole({
-                name: '',
-                permissions: {
-                    registerProducts: false,
-                    warehouse_employee: false,
-                    transferOrders: false,
-                    manageSuppliers: false,
-                    sales: false,
-                    dispatch: false
-                }
-            });
-            setIsEditing(false);
-        }
-        setOpenModal(true);
-    };
-
-    const handleCloseModal = () => {
-        setOpenModal(false);
+    const handleOpenModal = () => {
+        setIsEditing(false);
         setCurrentRole({
             name: '',
             permissions: {
@@ -88,16 +65,19 @@ const RoleManagement = () => {
                 dispatch: false
             }
         });
-        setIsEditing(false);
+        setOpenModal(true);
     };
+
+    const handleCloseModal = () => setOpenModal(false);
 
     const handleRoleChange = (e) => {
         const { name, value, type, checked } = e.target;
+
         setCurrentRole((prevRole) => ({
             ...prevRole,
             permissions: {
                 ...prevRole.permissions,
-                [name]: type === 'checkbox' ? checked : value  
+                [name]: type === 'checkbox' ? checked : value
             },
             name: name === 'name' ? value : prevRole.name
         }));
@@ -105,45 +85,63 @@ const RoleManagement = () => {
 
     const handleSubmit = async () => {
         const permissionsArray = Object.entries(currentRole.permissions)
-            .filter(([key, value]) => value && key !== 'name')  
+            .filter(([key, value]) => value && key !== 'name')
             .map(([key]) => key);
 
         const roleToSend = {
             name: currentRole.name,
-            permissions: permissionsArray  
+            permissions: permissionsArray
         };
 
         try {
-            const response = await fetch(isEditing ? `${API_URL_ROLES}${currentRole.id}` : API_URL_ROLES, {
-                method: isEditing ? 'PUT' : 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(roleToSend)
-            });
-            if (!response.ok) throw new Error(isEditing ? 'Error al actualizar el rol' : 'Error al crear el rol');
-            fetchRoles();  
-            message.success(isEditing ? 'Rol actualizado con éxito' : 'Rol creado con éxito');
+            const response = isEditing
+                ? await fetch(`${API_URL_ROLES}${currentRole.role_id}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(roleToSend)
+                  })
+                : await fetch(API_URL_ROLES, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(roleToSend)
+                  });
+
+            if (!response.ok) throw new Error('Error saving role');
+            fetchRoles();
+            message.success(`Role ${isEditing ? 'updated' : 'created'} successfully`);
             handleCloseModal();
         } catch (error) {
-            message.error(isEditing ? 'Error al actualizar el rol' : 'Error al crear el rol');
+            message.error('Error saving role');
             console.error(error);
         }
+    };
+
+    const handleEditRole = (role) => {
+        setIsEditing(true);
+        setCurrentRole({
+            role_id: role.role_id,
+            name: role.name,
+            permissions: JSON.parse(role.permissions).reduce(
+                (acc, perm) => ({ ...acc, [perm]: true }),
+                {}
+            )
+        });
+        setOpenModal(true);
     };
 
     const handleDeleteRole = async () => {
         try {
             const response = await fetch(`${API_URL_ROLES}${roleToDelete}`, {
-                method: 'DELETE',
+                method: 'DELETE'
             });
 
-            if (!response.ok) throw new Error('Error al eliminar el rol');
+            if (!response.ok) throw new Error('Error deleting role');
 
-            fetchRoles(); // Actualizar la lista después de la eliminación
-            message.success('Rol eliminado con éxito');
-            setConfirmDeleteModalVisible(false); // Cerrar el modal de confirmación
+            fetchRoles();
+            message.success('Role deleted successfully');
+            setConfirmDeleteModalVisible(false);
         } catch (error) {
-            message.error('Error al eliminar el rol');
+            message.error('Error deleting role');
             console.error(error);
         }
     };
@@ -163,127 +161,124 @@ const RoleManagement = () => {
     }, []);
 
     return (
-        <Layout style={{ minHeight: '100vh' }}>
+        <div style={{ display: 'flex' }}>
             <SideBarAdmin />
-            <Layout>
-                <Content style={{ margin: '24px 16px 0', overflow: 'initial' }}>
-                    <div style={{ padding: 24, background: '#fff', minHeight: 360 }}>
-                        <Card>
-                            <Space direction="vertical" style={{ width: '100%' }}>
-                                <Title level={2}>Gestión de Roles</Title>
-                                <Button 
-                                    type="primary" 
-                                    icon={<PlusOutlined />}
-                                    onClick={() => handleOpenModal()} 
-                                    style={{ marginBottom: '16px' }}
-                                >
-                                    Crear Rol
-                                </Button>
+            <div style={{ flex: 1, marginLeft: '30px', padding: '20px' }}>
+            <Header style={{ background: '#fff', padding: 0 }}>
+          <h2 className="text-2xl font-bold">Rol Managment</h2>
+             </Header>
+                <Button type="primary" onClick={handleOpenModal} style={{ marginBottom: '16px' }}>
+                    Create Role
+                </Button>
 
-                                {loading ? (
-                                    <Row justify="center" style={{ marginTop: '32px' }}>
-                                        <Col>
-                                            <Button type="primary" loading={loading}>
-                                                Cargando roles...
-                                            </Button>
-                                        </Col>
-                                    </Row>
-                                ) : (
-                                    <Table 
-                                        dataSource={roles} 
-                                        rowKey="role_id"
-                                        columns={[
-                                            { title: 'Nombre', dataIndex: 'name', key: 'name' },
-                                            { 
-                                                title: 'Permisos', 
-                                                dataIndex: 'permissions', 
-                                                key: 'permissions',
-                                                render: (permissions) => (
-                                                    <Row gutter={[8, 8]}>
-                                                        {JSON.parse(permissions).map((permission) => (
-                                                            <Col key={permission}>
-                                                                <Button type="link">{permissionLabels[permission] || permission}</Button>
-                                                            </Col>
-                                                        ))}
-                                                    </Row>
-                                                )
-                                            },
-                                            { 
-                                                title: 'Acciones', 
-                                                key: 'actions',
-                                                render: (_, record) => (
-                                                    <Space size="middle">
-                                                        <Button 
-                                                            type="primary" 
-                                                            icon={<EditOutlined />} 
-                                                            onClick={() => handleOpenModal(record)}
-                                                        />
-                                                        <Button 
-                                                            type="danger" 
-                                                            icon={<DeleteOutlined />} 
-                                                            onClick={() => showDeleteConfirm(record.role_id)} 
-                                                        />
-                                                    </Space>
-                                                ) 
-                                            }
-                                        ]}
-                                    />
-                                )}
-                            </Space>
-                        </Card>
-
-                        {/* Modal para crear o editar rol */}
-                        <Modal
-                            title={isEditing ? "Editar Rol" : "Crear Rol"}
-                            visible={openModal}
-                            onCancel={handleCloseModal}
-                            onOk={handleSubmit}
-                            okText={isEditing ? "Actualizar Rol" : "Crear Rol"}
-                            cancelText="Cancelar"
-                        >
-                            <div style={{ marginBottom: '16px' }}>
-                                <Input
-                                    placeholder="Nombre del Rol"
-                                    value={currentRole.name}
-                                    onChange={handleRoleChange}
-                                    name="name"
-                                    style={{ marginBottom: '16px' }}
-                                />
-                                <div>
-                                    <Row gutter={[16, 8]}>
-                                        {Object.keys(permissionLabels).map((permission) => (
-                                            <Col span={12} key={permission}>
-                                                <Checkbox
-                                                    checked={currentRole.permissions[permission]}
-                                                    onChange={handleRoleChange}
-                                                    name={permission}
-                                                >
-                                                    {permissionLabels[permission]}
-                                                </Checkbox>
+                {loading ? (
+                    <Row justify="center" style={{ marginTop: '32px' }}>
+                        <Col>
+                            <Button type="primary" loading={loading}>
+                                Loading roles...
+                            </Button>
+                        </Col>
+                    </Row>
+                ) : (
+                    <Table
+                        dataSource={roles}
+                        rowKey="role_id"
+                        columns={[
+                            { title: 'Name', dataIndex: 'name', key: 'name' },
+                            {
+                                title: 'Permissions',
+                                dataIndex: 'permissions',
+                                key: 'permissions',
+                                render: (permissions) => (
+                                    <Row gutter={[8, 8]}>
+                                        {JSON.parse(permissions).map((permission) => (
+                                            <Col key={permission}>
+                                                <Button type="link">
+                                                    {permissionLabels[permission] || permission}
+                                                </Button>
                                             </Col>
                                         ))}
                                     </Row>
-                                </div>
-                            </div>
-                        </Modal>
+                                )
+                            },
+                            {
+                                title: 'Actions',
+                                key: 'actions',
+                                render: (_, record) => (
+                                    <>
+                                        <EditOutlined
+                                            style={{
+                                                color: 'blue',
+                                                fontSize: '18px',
+                                                cursor: 'pointer',
+                                                marginRight: '8px'
+                                            }}
+                                            onClick={() => handleEditRole(record)}
+                                        />
+                                        <DeleteOutlined
+                                            style={{ color: 'red', fontSize: '18px', cursor: 'pointer' }}
+                                            onClick={() => showDeleteConfirm(record.role_id)}
+                                        />
+                                    </>
+                                )
+                            }
+                        ]}
+                    />
+                )}
 
-                        {/* Modal para confirmar la eliminación */}
-                        <Modal
-                            title="Confirmar Eliminación"
-                            visible={confirmDeleteModalVisible}
-                            onOk={handleDeleteRole}
-                            onCancel={handleCancelDelete}
-                            okText="Eliminar"
-                            cancelText="Cancelar"
-                            danger
-                        >
-                            <p>¿Estás seguro de que deseas eliminar este rol?</p>
-                        </Modal>
-                        <UserRoleAssignment />
+                <Modal
+                    title={isEditing ? 'Edit Role' : 'Create Role'}
+                    open={openModal}
+                    onCancel={handleCloseModal}
+                    onOk={handleSubmit}
+                    okText={isEditing ? 'Update Role' : 'Create Role'}
+                    cancelText="Cancel"
+                >
+                    <div style={{ marginBottom: '16px' }}>
+                        <Input
+                            placeholder="Role Name"
+                            value={currentRole.name}
+                            onChange={handleRoleChange}
+                            name="name"
+                            style={{ marginBottom: '16px' }}
+                        />
+                        <div>
+                            <Row gutter={[16, 8]}>
+                                {Object.keys(permissionLabels).map((permission) => (
+                                    <Col span={12} key={permission}>
+                                        <Checkbox
+                                            checked={currentRole.permissions[permission]}
+                                            onChange={handleRoleChange}
+                                            name={permission}
+                                        >
+                                            {permissionLabels[permission]}
+                                        </Checkbox>
+                                    </Col>
+                                ))}
+                            </Row>
+                        </div>
                     </div>
-                </Content>
-            </Layout>
-        </Layout>
+                </Modal>
+
+                <Modal
+                    title="Confirm Deletion"
+                    open={confirmDeleteModalVisible}
+                    onOk={handleDeleteRole}
+                    onCancel={handleCancelDelete}
+                    okText="Delete"
+                    cancelText="Cancel"
+                    danger
+                >
+                    <p>Are you sure you want to delete this role?</p>
+                </Modal>
+
+                <Collapse>
+                    <Panel header="Assign Role to User" key="1">
+                        <UserRoleAssignment />
+                    </Panel>
+                </Collapse>
+            </div>
+        </div>
     );
 };
 
