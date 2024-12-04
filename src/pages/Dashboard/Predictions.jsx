@@ -55,7 +55,8 @@ const Predictions = () => {
         ],
         topStores: [
             { title: 'Store ID', dataIndex: 'store_id', key: 'store_id' },
-            { title: 'Total Sales', dataIndex: 'total_sales', key: 'total_sales' },
+            { title: 'Historic Sales', dataIndex: 'historic_sales', key: 'historic_sales' },
+            { title: 'Future Sales Projection', dataIndex: 'future_sales_projection', key: 'future_sales_projection' },
         ],
         productDemand: [
             { title: 'Product Name', dataIndex: 'product_name', key: 'product_name' },
@@ -81,27 +82,26 @@ const Predictions = () => {
         setSelectedStore(value);
     };
 
-const getTileContent = ({ date, view }) => {
-    if (view === 'month' && selectedStore && futureSalesData) {
-        const selectedDateString = date.toISOString().split('T')[0];
+    const getTileContent = ({ date, view }) => {
+        if (view === 'month' && selectedStore && futureSalesData) {
+            const selectedDateString = date.toISOString().split('T')[0];
 
-        const salesOnDate = futureSalesData.future_sales?.filter(
-            sale =>
-                new Date(sale.sale_date).toISOString().split('T')[0] === selectedDateString &&
-                sale.store_id === selectedStore
-        );
-
-        if (salesOnDate?.length > 0) {
-            return (
-                <div className="tile-content">
-                    <span className="sales">{salesOnDate[0].predicted_sales_count} sales</span>
-                </div>
+            const salesOnDate = futureSalesData.future_sales?.filter(
+                sale =>
+                    new Date(sale.sale_date).toISOString().split('T')[0] === selectedDateString &&
+                    sale.store_id === selectedStore
             );
-        }
-    }
-    return null; // No añadir contenido si no hay información extra
-};
 
+            if (salesOnDate?.length > 0) {
+                return (
+                    <div className="tile-content">
+                        <span className="sales">{salesOnDate[0].predicted_sales_count} sales</span>
+                    </div>
+                );
+            }
+        }
+        return null; // No añadir contenido si no hay información extra
+    };
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
@@ -137,12 +137,15 @@ const getTileContent = ({ date, view }) => {
                     <Col span={24}>
                         <Card title="Top Stores Predictions" style={{ marginBottom: '24px' }}>
                             <Button type="primary" onClick={() => handleApiCall(['predict_top_stores'], [data => {
-                                const formattedData = data.top_stores.map((item, index) => ({
-                                    key: index,
-                                    store_id: item[0],
-                                    total_sales: item[1],
-                                }));
-                                setTopStoresData(formattedData);
+                                if (data.stores_data) {
+                                    const formattedData = data.stores_data.map((item, index) => ({
+                                        key: index,
+                                        store_id: item.store_id,
+                                        historic_sales: item.historic_sales,
+                                        future_sales_projection: item.future_sales_projection,
+                                    }));
+                                    setTopStoresData(formattedData);
+                                }
                             }])} loading={loading}>
                                 Predict Top Stores
                             </Button>
